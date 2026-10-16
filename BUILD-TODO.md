@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 0.1 Confirm the baseline
+**Current step, Track A:** 0.2 Make EAS builds work
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -20,7 +20,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 0.1 | Confirm the baseline | [ ] | |
+| 0.1 | Confirm the baseline | [x] | Approved 2026-10-16. `npx expo install --check` → "Dependencies are up to date". `npm ci --dry-run --include=dev` → "up to date". `npx tsc --noEmit` → clean. `npm run lint:guardrails` → "Guardrail check passed." `npm test` → 1 suite, 1 test passed. `git status` → clean working tree. |
 | 0.2 | Make EAS builds work | [ ] | |
 | 0.3 | Notification library spike | [ ] | |
 | 0.4 | UPI result spike | [ ] | |
@@ -232,3 +232,5 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | Date | Track and step | What changed | Files |
 |---|---|---|---|
 | | | Project documents created | README, ARCHITECTURE, ARCHITECTURE-BUILD-PLAN, DESIGN-BUILD-PLAN, DESIGN, DESIGN-TOKENS, COPY, EVALS, GUARDRAILS, AI-RULES, BUILD-TODO, CLAUDE, AGENTS |
+| 2026-10-16 | A 0.1 Confirm the baseline | Ran all Done-when checks; all pass | BUILD-TODO.md |
+| 2026-10-16 | A 0.1 Confirm the baseline | Approved; marked [x]; current step moved to 0.2 | BUILD-TODO.md |
