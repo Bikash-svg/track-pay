@@ -94,7 +94,6 @@ All amounts are integer paise. These definitions are the single source for every
 | Allowance per day | floor(left ÷ days remaining) | ₹568 a day for 20 days |
 | Versus last month | Spent this month so far vs spent in the same days last month | percent and amount |
 
-The `₹358/day` figure in `build_plan.md` is wrong: it does not match any definition above. Use the table.
 
 Totals are only as complete as what the user records; each analytics screen says "Based on payments recorded in Track Pay".
 

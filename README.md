@@ -3,7 +3,7 @@
 A private, on-device expense tracker for Android. You pay with your own UPI app, and Track Pay records the payment, asks you to confirm how it went, reminds you about anything unconfirmed, and shows where your money goes.
 
 > **Status:** documents are in place; the build follows the two plans in order. Progress is tracked in `BUILD-TODO.md`.
-> **Name:** "Track Pay" comes from `build_plan.md`. The code and some old documents still say "VaultX". Step 0.5 renames it.
+> **Name:** The product is called "Track Pay". The code and some old documents still say "VaultX". Step 0.5 renames it.
 
 ## What it does
 
@@ -42,8 +42,6 @@ React Native with Expo SDK 54 (development build, not Expo Go), TypeScript, Andr
 | `DESIGN-TOKENS.md` | Every colour and size for both themes, with contrast measurements. |
 | `DESIGN.md` | Screens, dialogs, notifications: structure, copy, behaviour. No visual values. |
 | `COPY.md` | All text in the app. |
-| `SCREENS_SPEC.md` | Exact element trees from the earlier design. Structure and text only; colours are superseded. |
-| `build_plan.md` | The original feature list (filtered in the project plan). |
 | `EVALS.md` | Test cases that decide whether a feature works. |
 | `CLAUDE.md`, `AGENTS.md` | Short files that point AI tools to `AI-RULES.md`. |
 

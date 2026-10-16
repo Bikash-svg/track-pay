@@ -211,7 +211,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 
 | Date | Decision | Decided by |
 |---|---|---|
-| | | |
+| 2026-10-16 | SCREENS_SPEC.md and build_plan.md will not exist. References removed. | owner |
 
 ## Open questions (ask before guessing; defaults in brackets)
 

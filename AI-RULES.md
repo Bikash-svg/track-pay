@@ -37,7 +37,7 @@ Read in this order: `AI-RULES.md` (this file), `BUILD-TODO.md`, `GUARDRAILS.md`,
 |---|---|
 | D1 | The product is called **Track Pay**. Code says VaultX until Step 0.5. |
 | D2 | Visual system = `DESIGN-BUILD-PLAN.md` Part A, with the prose colours winning over the YAML colours, as resolved in Part B section B1. Token values are in `DESIGN-TOKENS.md`. |
-| D3 | Screens, copy and dialog contents = `DESIGN.md`, `COPY.md`, `SCREENS_SPEC.md` (structure and text only; ignore their colours, fonts and radii). |
+| D3 | Screens, copy and dialog contents = `DESIGN.md` and `COPY.md`. They give structure and text only; their colours, fonts and radii are not used. |
 | D4 | Dark (Obsidian) is the default. Light (Alabaster) and Auto are required. |
 | D5 | Android only, React Native with Expo SDK 54. No Tailwind, no web view, no iOS work. |
 | D6 | In scope beyond the core: splash, onboarding (name, optional photo), top bar without a sync dot. |

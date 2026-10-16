@@ -28,27 +28,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 5. **Device check** where the step lists one (real phone, not an emulator).
 6. **Update `BUILD-TODO.md`** (Track A) with evidence, then stop and report. Wait for approval.
 
-**Sources:** features and behaviour: `build_plan.md` (filtered below), `DESIGN.md` (structure and copy only), `SCREENS_SPEC.md` (structure and text only), `COPY.md`, `ARCHITECTURE.md`, `EVALS.md`. Ignore all colours, fonts and radii in those files. Safety: `GUARDRAILS.md`.
-
-## Scope map of `build_plan.md`
-
-| build_plan step | Here | Notes |
-|---|---|---|
-| 1.1 Scaffolding (Tailwind, Lucide) | Changed | No Tailwind or icon library here. Icons are in the design plan. |
-| 1.2 Layout wrapper (iOS bars, scroll masks) | Design plan | D3.1 |
-| 1.3 Brand assets, UPI icons | Design plan | D2.6, D2.7 |
-| 2.1 Pod dock | Plain tabs here, designed in D3.2 | |
-| 2.2 Top app bar | Functional here (bell count, avatar link), no sync dot | Look in D3.3 |
-| 3.1 Splash, 3.2 Onboarding | Functional here (Phase 2) | Look in D4.1, D4.2 |
-| 3.3 Home | Phase 3 | `₹358/day` is wrong: use `₹330/day` |
-| 3.4 Analytics | Phase 5 | Charts are plain here |
-| 3.5 History | Phase 6 | No SLA header, no voice input |
-| 3.6 Settings | Phase 7 | No biometric badge; slider optional later |
-| 3.7 Pending Collect | Step 4.7 | Only "Needs confirming". No collect requests, SMS detection, WhatsApp |
-| 4.x Dialogs | Phases 1.4 and 4 to 7 | Looks in D5 |
-| 5.1, 5.2 Verification | Phase 9 | Contrast and polish checks are in D7 |
-
----
+**Sources:** features and behaviour: `DESIGN.md` (structure and copy only), `COPY.md`, `ARCHITECTURE.md`, `EVALS.md`. Ignore all colours, fonts and radii in those files. Safety: `GUARDRAILS.md`.
 
 ## Phase 0: Baseline
 
@@ -90,7 +70,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 
 #### Step 1.4: Dialog host
 - **Build:** one reusable centred dialog: scrim, close button, tap outside and Back dismiss, scrolls if tall, keyboard-safe. Used by every popup.
-- **Done when:** centred on small and large phones with the keyboard open (build_plan 5.1).
+- **Done when:** centred on small and large phones with the keyboard open.
 
 #### Step 1.5: Theme choice
 - **Build:** Dark, Light and Auto (follows the phone), persisted, status bar follows.
@@ -109,7 +89,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 - **Done when:** works with no network (EVALS D7); never shows an empty Home first.
 
 #### Step 2.3: Onboarding form
-- **Build:** "Step 1 of 2" text, Skip for now, First name and Surname fields, live greeting preview text, Continue. **Step 2 of 2 is not described in `build_plan.md`. Proposed: an optional monthly limit (amount field, "Skip for now", "Continue to App").** Ask before building step 2.
+- **Build:** "Step 1 of 2" text, Skip for now, First name and Surname fields, live greeting preview text, Continue. **Step 2 of 2 s not described in the design documents. Proposed: an optional monthly limit (amount field, "Skip for now", "Continue to App").** Ask before building step 2.
 - **Done when:** preview updates as you type; Continue saves; Skip leaves the name empty and opens Home.
 
 #### Step 2.4: Launch routing

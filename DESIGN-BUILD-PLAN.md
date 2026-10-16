@@ -283,7 +283,7 @@ Part A above is the design system. Part B says **how and in what order to apply 
 | 6 | The file targets web and desktop (hover, backdrop-filter, 1280 px layouts) | Mobile only. Hover becomes the pressed state. Blur is optional with a solid fallback. Ignore desktop and tablet layouts |
 | 7 | "Internal nav links display micro JetBrains Mono numbers" is unclear | Default: tab labels in `label-caps`. **Ask if unclear** |
 | 8 | Radii: spacing says cards 16 and inputs 8, but dialogs and sheets are not listed | Dialogs use 16 like cards (Level 2 surface). **Needs confirmation** |
-| 9 | `build_plan.md` names the themes "Obsidian, Polar, System" while this file says Obsidian and Alabaster | **Obsidian (dark), Alabaster (light), Auto**. "Polar" is not used |
+| 9 | An earlier draft named the themes "Obsidian, Polar, System" while this file says Obsidian and Alabaster | **Obsidian (dark), Alabaster (light), Auto**. "Polar" is not used |
 
 ## B2. Approach
 
