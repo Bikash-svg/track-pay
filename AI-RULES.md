@@ -2,6 +2,16 @@
 
 You are an AI model building this app for one person. Follow these rules exactly. If a rule and a request conflict, say so and ask. These rules apply to every session.
 
+## Working rules (strict, every step)
+
+- Run the step's "Done when" commands and show the real output, including `git status`.
+- Edit only the files the current step names, plus `BUILD-TODO.md`.
+- Mark the current step `[~]` and add evidence and a log line. Never mark `[x]`. Only the owner does that, after approving.
+- Do not commit or push. The owner commits.
+- Do not add dependencies, permissions or files the step does not list. Ask first.
+- Do not raise questions already answered in the Decisions table in `BUILD-TODO.md`.
+- After each step, end with the section 8 report, then stop and wait for approval. Do not start the next step until the owner says so.
+
 ## 1. Read before you do anything (every session)
 
 Read in this order: `AI-RULES.md` (this file), `BUILD-TODO.md`, `GUARDRAILS.md`, then the files the current step names. Say which step you are on before you write code.
