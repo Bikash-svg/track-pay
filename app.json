@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "track-pay-v3",
-    "slug": "track-pay-v3",
+    "name": "Track Pay",
+    "slug": "track-pay",
+    "owner": "dev-hehe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "trackpayv3",
+    "scheme": "trackpay",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.bkas.trackpay",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "496e4aaa-0885-4ea1-bc8c-8c67f2fece20"
+      }
     }
   }
 }

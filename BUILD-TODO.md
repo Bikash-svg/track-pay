@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 0.2 Make EAS builds work
+**Current step, Track A:** 0.3 Notification library spike
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -12,7 +12,6 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 
 ## Blockers
 
-- Step 0.2: the last EAS build failed at `npm ci` (lock file out of sync). Fix: `npx expo install --fix`, regenerate the lock with npm 10, pin Node 20.19.4, commit, rebuild.
 
 ## Track A: project plan (a working app, plain look)
 
@@ -21,7 +20,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
 | 0.1 | Confirm the baseline | [x] | Approved 2026-10-16. `npx expo install --check` → "Dependencies are up to date". `npm ci --dry-run --include=dev` → "up to date". `npx tsc --noEmit` → clean. `npm run lint:guardrails` → "Guardrail check passed." `npm test` → 1 suite, 1 test passed. `git status` → clean working tree. |
-| 0.2 | Make EAS builds work | [ ] | |
+| 0.2 | Make EAS builds work | [x] | Approved 2026-10-16. Created eas.json (preview + production profiles, node pinned 20.19.4). .nvmrc already 20.19.4. .npmrc restored from git (legacy-peer-deps=false, fund=false). package.json engines pinned to "20.19.4". .gitignore has /android and /ios. modules/upi-launcher/android does not exist (no modules/ dir). Checks: expo install --check → up to date; npm ci --dry-run --include=dev → up to date (EBADENGINE warning only: local node v24.19.0 vs engines 20.19.4); tsc clean; guardrails passed; tests 1 passed. eas build -p android --profile preview could not run: EAS project not configured (needs eas init), no device for APK install. Blocker note on lock file resolved — lock file in sync. |
 | 0.3 | Notification library spike | [ ] | |
 | 0.4 | UPI result spike | [ ] | |
 | 0.5 | Rename to Track Pay | [ ] | |
@@ -234,3 +233,6 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | | | Project documents created | README, ARCHITECTURE, ARCHITECTURE-BUILD-PLAN, DESIGN-BUILD-PLAN, DESIGN, DESIGN-TOKENS, COPY, EVALS, GUARDRAILS, AI-RULES, BUILD-TODO, CLAUDE, AGENTS |
 | 2026-10-16 | A 0.1 Confirm the baseline | Ran all Done-when checks; all pass | BUILD-TODO.md |
 | 2026-10-16 | A 0.1 Confirm the baseline | Approved; marked [x]; current step moved to 0.2 | BUILD-TODO.md |
+| 2026-10-16 | A 0.2 Make EAS builds work | Created eas.json, restored .npmrc, pinned engines to 20.19.4; all local checks pass; eas build cannot run here (no EAS project, no device) | eas.json, .npmrc, package.json, BUILD-TODO.md |
+| 2026-10-16 | A 0.2 Make EAS builds work | Approved; marked [x]; current step moved to 0.3 | BUILD-TODO.md |
+| 2026-10-16 | A 0.3 Notification library spike | Deferred by user ("not yet"); remains [ ] | BUILD-TODO.md |
