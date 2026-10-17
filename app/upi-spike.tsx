@@ -1,4 +1,4 @@
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Button, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useState } from "react";
 import { listUpiApps, openUpi, type ListAppsResult, type UpiApp, type UpiResult } from "../src/native/upiLauncher";
 import type { UpiListResult } from "../modules/upi-launcher/src/UpiLauncher.types";
@@ -110,7 +110,7 @@ export default function UpiSpikeScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
       <Text style={styles.title}>UPI result spike</Text>
 
       <View style={styles.card}>
@@ -174,7 +174,7 @@ export default function UpiSpikeScreen() {
           <Text style={styles.muted}>No result yet.</Text>
         )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -182,6 +182,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 12,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   title: {
     fontSize: 20,
