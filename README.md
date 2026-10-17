@@ -3,7 +3,7 @@
 A private, on-device expense tracker for Android. You pay with your own UPI app, and Track Pay records the payment, asks you to confirm how it went, reminds you about anything unconfirmed, and shows where your money goes.
 
 > **Status:** documents are in place; the build follows the two plans in order. Progress is tracked in `BUILD-TODO.md`.
-> **Name:** The product is called "Track Pay". The code and some old documents still say "VaultX". Step 0.5 renames it.
+> **Name:** The product is called "Track Pay".
 
 ## What it does
 

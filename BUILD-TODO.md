@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 0.5 Rename to Track Pay
+**Current step, Track A:** 1.1 Semantic tokens
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -34,7 +34,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
   - manifest `<queries>` block: scheme=upi host=pay added; no runtime permission requested.
   - Native module `modules/upi-launcher` wired via Expo modules autolinking: `expo-module.config.json` (`platforms: ["android"]`, module `com.trackpay.upilauncher.UpiLauncherModule`), module `android/build.gradle` (expo-module-gradle-plugin), Kotlin `UpiLauncherModule` with `openUpi`/`listUpiApps`; manifest `<queries>` block included in module AndroidManifest.xml. Prebuild verified autolinking picks up the module (`settings.gradle` uses `expoAutolinking.useExpoModules()`); local `android/` folder is git-ignored, not committed. No config plugin added, no `app.json` plugins change.
   - No real payee names, VPAs or amounts recorded. Do not try to work around the block. |
-| 0.5 | Rename to Track Pay | [ ] | |
+| 0.5 | Rename to Track Pay | [x] | Approved 2026-10-17. Verified: grep -rni vaultx src app app.json modules → nothing user-visible (exit 1). README.md line 6 simplified to "The product is called Track Pay." AI-RULES.md D1 updated: "The old name VaultX no longer appears in code." ARCHITECTURE-BUILD-PLAN.md Step 0.5 Done-when updated: grep -ri vaultx src app.json. app.json already "Track Pay"; android package already com.bkas.trackpay; no app.config.js exists. Checks: npm run check → expo install --check up to date, tsc clean, lint:guardrails passed, npm test 1 passed. Done-when met. | BUILD-TODO.md |
 
 ### Phase 1: Plain foundation
 
@@ -264,3 +264,6 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-17 | A 0.4 UPI result spike | Final findings: module finds installed UPI apps (Google Pay, PhonePe, Navi) once queries block declares scheme=upi host=pay and app is rebuilt; probe results <fill in the two counts from the screen>; personal-payee link (valid format, ₹1) declined with security message in all three apps; fake payee and friend link (no payee ID) rejected or unusable in all three apps; merchant case <result per app, or "not tested; deferred to Step 4.2">; focus returned after UPI app closes <yes/no>; raw result <empty / action+data / extras with keys ...>; result lost if app process killed so "Did it go through?" driven from pending rows in database (Step 4.5); Open question 13 options A/B/C default A; Free plan build quota ran out 2026-10-17, resets Nov 1, local builds with JDK 17 meanwhile. | BUILD-TODO.md |
 | 2026-10-17 | A 0.4 UPI result spike | Open question 13 updated with options A (open UPI app, user finishes there, default), B (send nothing to UPI app, save pending, notify user to confirm), C (blocked — friend flow sends nothing per ARCHITECTURE.md §8); owner decides before Step 4.1. | BUILD-TODO.md |
 | 2026-10-17 | A 0.4 UPI result spike | Approved; marked [x]; current step moved to 0.5 | BUILD-TODO.md |
+| 2026-10-17 | A 0.5 Rename to Track Pay | Verified: grep -ri vaultx src app.config.js → zero matches; app.json already "Track Pay"; android package already com.bkas.trackpay; no app.config.js exists; checks pass (tsc clean, lint:guardrails passed, npm test 1 passed). Done-when met. | BUILD-TODO.md |
+| 2026-10-17 | A 0.5 Rename to Track Pay | Full-project grep -rni vaultx --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=android → only document hits (README.md:6, EVALS.md:177, AI-RULES.md:49, ARCHITECTURE-BUILD-PLAN.md:53); no user-visible VaultX strings in code, notification titles, channel names, or spike screens. grep -rni vaultx src app app.json modules → nothing (exit 1). npm run check passed: tsc clean, lint:guardrails passed, npm test 1 passed. Proposed document wording listed in writing; no documents edited. | BUILD-TODO.md |
+| 2026-10-17 | A 0.5 Rename to Track Pay | Applied document edits: README.md line 6 → "The product is called Track Pay." AI-RULES.md D1 → "The old name VaultX no longer appears in code." ARCHITECTURE-BUILD-PLAN.md Step 0.5 Done-when → `grep -ri vaultx src app.json`. Marked [x]; current step moved to 1.1 | BUILD-TODO.md |

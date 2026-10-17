@@ -50,7 +50,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 
 #### Step 0.5: Rename to Track Pay
 - **Build:** visible name in `app.config.js`, strings, notification titles and channel names. Keep the Android package id.
-- **Done when:** `grep -ri vaultx src app.config.js` finds nothing user-visible; tests pass.
+- **Done when:** `grep -ri vaultx src app.json` finds nothing user-visible; tests pass.
 
 ---
 
