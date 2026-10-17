@@ -1,0 +1,27 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.trackpay.upilauncher" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <queries>
+7-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:4:5-9:15
+8        <intent>
+8-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:5:9-8:18
+9            <action android:name="android.intent.action.VIEW" />
+9-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:6:13-64
+9-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:6:21-62
+10
+11            <data
+11-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:13-60
+12                android:host="pay"
+12-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:40-58
+13                android:scheme="upi" />
+13-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:19-39
+14        </intent>
+15    </queries>
+16
+17    <application />
+17-->/home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:11:5-19
+18
+19</manifest>

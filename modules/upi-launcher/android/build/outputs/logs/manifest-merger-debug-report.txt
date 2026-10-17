@@ -1,0 +1,33 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:1:1-13:12
+INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:1:1-13:12
+	package
+		ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:2:5-39
+		INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:1:11-69
+queries
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:4:5-9:15
+intent#action:name:android.intent.action.VIEW+data:host:pay+data:scheme:upi
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:5:9-8:18
+action#android.intent.action.VIEW
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:6:13-64
+	android:name
+		ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:6:21-62
+data
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:13-60
+	android:host
+		ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:40-58
+	android:scheme
+		ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:7:19-39
+application
+ADDED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml:11:5-19
+uses-sdk
+INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml
+INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /home/bkas/my_things/code-stuff/projects/trackPay/v-3/track-pay-v3/modules/upi-launcher/android/src/main/AndroidManifest.xml
