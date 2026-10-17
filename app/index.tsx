@@ -1,5 +1,6 @@
 import { Button, StyleSheet, Text, View } from "react-native";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import {
   postTestNotification,
   requestPermission,
@@ -7,6 +8,7 @@ import {
 } from "../src/notifications/spike";
 
 export default function Index() {
+  const router = useRouter();
   const [result, setResult] = useState<string | null>(null);
 
   return (
@@ -29,6 +31,7 @@ export default function Index() {
         title="Schedule in 2 minutes"
         onPress={scheduleTestNotification}
       />
+      <Button title="Open UPI spike" onPress={() => router.push("/upi-spike")} />
     </View>
   );
 }

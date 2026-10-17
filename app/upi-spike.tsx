@@ -1,6 +1,7 @@
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { useState } from "react";
-import { listUpiApps, openUpi, type UpiApp, type UpiResult } from "../src/native/upiLauncher";
+import { listUpiApps, openUpi, type ListAppsResult, type UpiApp, type UpiResult } from "../src/native/upiLauncher";
+import type { UpiListResult } from "../modules/upi-launcher/src/UpiLauncher.types";
 
 const SHOP_QR_LINK =
   "upi://pay?pa=test@upi&pn=Test%20Shop&am=100.00&cu=INR&tn=Test%20payment";
@@ -12,6 +13,8 @@ export default function UpiSpikeScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<UpiResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadStatus, setLoadStatus] = useState<string | null>(null);
+  const [rawJson, setRawJson] = useState<string | null>(null);
   const [selectedApp, setSelectedApp] = useState<UpiApp | null>(null);
 
   const formatResult = (res: UpiResult): string => {
@@ -29,11 +32,37 @@ export default function UpiSpikeScreen() {
   const loadApps = async () => {
     setLoading(true);
     setError(null);
+    setLoadStatus(null);
+    setRawJson(null);
     try {
-      const found = await listUpiApps();
-      setApps(found);
+      const res = await listUpiApps();
+      if (res.kind === "not-found") {
+        setLoadStatus("Native module UpiLauncher not found");
+        setApps([]);
+        setRawJson(JSON.stringify({ kind: "not-found" }, null, 2));
+      } else if (res.kind === "error") {
+        setLoadStatus(`${res.code}: ${res.message}`);
+        setApps([]);
+        setRawJson(JSON.stringify({ kind: "error", code: res.code, message: res.message }, null, 2));
+      } else {
+        const r = res.result;
+        const md = r.matchDefaultOnly;
+        const fz = r.flagsZero;
+        const raw = {
+          kind: "found",
+          sdkInt: r.sdkInt,
+          matchDefaultOnly: { flags: md.flags, count: md.count, apps: md.apps },
+          flagsZero: { flags: fz.flags, count: fz.count, apps: fz.apps },
+        };
+        setRawJson(JSON.stringify(raw, null, 2));
+        setApps(md.apps);
+        setLoadStatus(
+          `SDK ${r.sdkInt} · matchDefaultOnly(${md.flags}): ${md.count} apps · flagsZero(${fz.flags}): ${fz.count} apps · apps: ${md.apps.map((a) => a.label).join(", ") || "none"}`,
+        );
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const err = e as Error & { code?: string };
+      setError(`${err.code ?? "UNKNOWN"}: ${err.message ?? String(e)}`);
     } finally {
       setLoading(false);
     }
@@ -46,7 +75,8 @@ export default function UpiSpikeScreen() {
       const res = await openUpi(link);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const err = e as Error & { code?: string };
+      setError(`${err.code ?? "UNKNOWN"}: ${err.message ?? String(e)}`);
     }
   };
 
@@ -58,7 +88,8 @@ export default function UpiSpikeScreen() {
       const res = await openUpi(link, app.packageName);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const err = e as Error & { code?: string };
+      setError(`${err.code ?? "UNKNOWN"}: ${err.message ?? String(e)}`);
     }
   };
 
@@ -73,7 +104,8 @@ export default function UpiSpikeScreen() {
       const res = await openUpi(FRIEND_LINK, selectedApp.packageName);
       setResult(res);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const err = e as Error & { code?: string };
+      setError(`${err.code ?? "UNKNOWN"}: ${err.message ?? String(e)}`);
     }
   };
 
@@ -97,7 +129,9 @@ export default function UpiSpikeScreen() {
 
       <View style={styles.card}>
         <Text style={styles.label}>Installed UPI apps</Text>
-        {apps.length === 0 && !loading && (
+        {loadStatus && <Text style={styles.muted}>{loadStatus}</Text>}
+        {!loadStatus && loading && <Text style={styles.muted}>Loading installed apps...</Text>}
+        {!loadStatus && !loading && apps.length === 0 && (
           <Text style={styles.muted}>No UPI apps found (or native module not wired).</Text>
         )}
         {apps.map((app) => (
@@ -110,6 +144,9 @@ export default function UpiSpikeScreen() {
             />
           </View>
         ))}
+        {rawJson && (
+          <Text style={styles.rawJson}>{rawJson}</Text>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -194,6 +231,12 @@ const styles = StyleSheet.create({
     color: "#666",
     flex: 2,
     marginRight: 8,
+  },
+  rawJson: {
+    fontSize: 10,
+    fontFamily: "monospace",
+    color: "#333",
+    marginTop: 6,
   },
   result: {
     fontSize: 12,
