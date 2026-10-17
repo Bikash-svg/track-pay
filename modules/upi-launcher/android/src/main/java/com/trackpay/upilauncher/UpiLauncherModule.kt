@@ -27,21 +27,21 @@ class UpiLauncherModule : Module() {
       val activity = appContext.currentActivity
         ?: run {
           pendingPromise = null
-          promise.reject("NO_ACTIVITY", "No current activity")
+          promise.reject("NO_ACTIVITY", "No current activity", null)
           return@AsyncFunction
         }
       try {
         activity.startActivityForResult(intent, REQUEST_CODE_UPI)
       } catch (e: Exception) {
         pendingPromise = null
-        promise.reject("OPEN_FAILED", e.message ?: "Unknown error")
+        promise.reject("OPEN_FAILED", e.message ?: "Unknown error", e)
       }
     }
 
     AsyncFunction("listUpiApps") { promise: Promise ->
       val reactContext = appContext.reactContext
         ?: run {
-          promise.reject("NO_CONTEXT", "No react context")
+          promise.reject("NO_CONTEXT", "No react context", null)
           return@AsyncFunction
         }
       val packageManager = reactContext.packageManager
