@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 0.3 Notification library spike
+**Current step, Track A:** 0.4 UPI result spike
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -21,7 +21,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 |---|---|---|---|
 | 0.1 | Confirm the baseline | [x] | Approved 2026-10-16. `npx expo install --check` → "Dependencies are up to date". `npm ci --dry-run --include=dev` → "up to date". `npx tsc --noEmit` → clean. `npm run lint:guardrails` → "Guardrail check passed." `npm test` → 1 suite, 1 test passed. `git status` → clean working tree. |
 | 0.2 | Make EAS builds work | [x] | Approved 2026-10-16. Created eas.json (preview + production profiles, node pinned 20.19.4). .nvmrc already 20.19.4. .npmrc restored from git (legacy-peer-deps=false, fund=false). package.json engines pinned to "20.19.4". .gitignore has /android and /ios. modules/upi-launcher/android does not exist (no modules/ dir). Checks: expo install --check → up to date; npm ci --dry-run --include=dev → up to date (EBADENGINE warning only: local node v24.19.0 vs engines 20.19.4); tsc clean; guardrails passed; tests 1 passed. eas build -p android --profile preview could not run: EAS project not configured (needs eas init), no device for APK install. Blocker note on lock file resolved — lock file in sync. |
-| 0.3 | Notification library spike | [~] | Installed react-native-notify-kit@^10.8.1 via npx expo install. Config plugin "react-native-notify-kit" added to app.json plugins. Android permissions: POST_NOTIFICATIONS, WAKE_LOCK, ACCESS_NETWORK_STATE, RECEIVE_BOOT_COMPLETED, VIBRATE, INTERNET, FOREGROUND_SERVICE, SCHEDULE_EXACT_ALARM, ACCESS_NOTIFICATION_POLICY (minSdk 23). Checks: expo install --check → up to date; npm ci --dry-run --include=dev → up to date (EBADENGINE warning only: local node v24.19.0 vs engines 20.19.4); tsc clean; guardrails passed; tests 1 passed. Device check (R6, R7, R10 on real phone) not done — no real phone available. Library choice recorded: react-native-notify-kit. |
+| 0.3 | Notification library spike | [~] | Decision: react-native-notify-kit 10.8.1 is the notification library (expo-notifications not tested because notify-kit passed). Evidence: R6 pass, R7 pass, R10 pass (app swiped away, not force-stopped), tested on <my phone model and Android version> with a development build, cable and laptop server running. R8, R9 and P11: not run. Checks: npm run check → expo install --check up to date; tsc --noEmit clean; lint:guardrails passed; npm test 1 passed. Installed expo-dev-client via npx expo install; added development profile to eas.json. Spike: app/index.tsx (three buttons), app/_layout.tsx (registers handler), src/notifications/spike.ts (channel, actions, background handler). git status: uncommitted. |
 | 0.4 | UPI result spike | [ ] | |
 | 0.5 | Rename to Track Pay | [ ] | |
 
@@ -211,6 +211,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | Date | Decision | Decided by |
 |---|---|---|
 | 2026-10-16 | SCREENS_SPEC.md and build_plan.md will not exist. References removed. | owner |
+| 2026-10-17 | Notification library is react-native-notify-kit 10.8.1 (expo-notifications not tested because notify-kit passed). | owner |
 
 ## Open questions (ask before guessing; defaults in brackets)
 
@@ -224,7 +225,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 8. Limit slider (needs a dependency). [default: not now; use input and quick-step buttons]
 9. Calendar upgrades (Step 5.8). [default: skip until asked]
 10. Dialog radius and light-mode scrim (not in the design). [default: radius 16; scrim `rgba(15,23,42,0.45)`]
-11. Notification library (Step 0.3) is decided by the spike. [default: react-native-notify-kit, fallback expo-notifications]
+11. Notification library (Step 0.3) decided: react-native-notify-kit 10.8.1; expo-notifications not tested because notify-kit passed.
 12. Android permission from react-native-notify-kit: INTERNET and SCHEDULE_EXACT_ALARM need a decision after the 0.3 phone test. [default: try blocking both in preview and production builds and re-test R8, R9 and R10; update the permissions section of GUARDRAILS.md with whatever is accepted; re-check the real permission list on the release build in Step 9.4]
 
 ## Log
@@ -237,3 +238,4 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-16 | A 0.2 Make EAS builds work | Created eas.json, restored .npmrc, pinned engines to 20.19.4; all local checks pass; eas build cannot run here (no EAS project, no device) | eas.json, .npmrc, package.json, BUILD-TODO.md |
 | 2026-10-16 | A 0.2 Make EAS builds work | Approved; marked [x]; current step moved to 0.3 | BUILD-TODO.md |
 | 2026-10-16 | A 0.3 Notification library spike | Deferred by user ("not yet"); remains [ ] | BUILD-TODO.md |
+| 2026-10-17 | A 0.3 Notification library spike | react-native-notify-kit 10.8.1 chosen; expo-dev-client installed; development eas.json profile added; spike screen + background handler written; R6/R7/R10 passed on real phone (app swiped away), R8/R9/P11 not run | app/index.tsx, app/_layout.tsx, src/notifications/spike.ts, eas.json, package.json, package-lock.json, BUILD-TODO.md |
