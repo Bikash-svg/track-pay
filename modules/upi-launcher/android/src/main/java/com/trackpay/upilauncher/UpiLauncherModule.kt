@@ -4,10 +4,12 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import expo.modules.kotlin.Promise
+import expo.modules.kotlin.events.OnActivityResultPayload
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import expo.modules.kotlin.modules.AppArg
-import expo.modules.kotlin.modules.dsl._
+
+private const val REQUEST_CODE_UPI = 1001
 
 class UpiLauncherModule : Module() {
 
@@ -20,8 +22,7 @@ class UpiLauncherModule : Module() {
       pendingPromise = promise
       val intent = Intent(Intent.ACTION_VIEW).apply {
         data = Uri.parse(link)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        packageName?.let { setPackage(it) }
+        if (packageName?.isNotEmpty() == true) setPackage(packageName)
       }
       val activity = appContext.currentActivity
         ?: run {
@@ -37,8 +38,13 @@ class UpiLauncherModule : Module() {
       }
     }
 
-    Function("listUpiApps") { promise: Promise ->
-      val packageManager = appContext.packageManager
+    AsyncFunction("listUpiApps") { promise: Promise ->
+      val reactContext = appContext.reactContext
+        ?: run {
+          promise.reject("NO_CONTEXT", "No react context")
+          return@AsyncFunction
+        }
+      val packageManager = reactContext.packageManager
       val intent = Intent(Intent.ACTION_VIEW).setData(Uri.parse("upi://pay"))
       val resolveInfos = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
       val apps = mutableListOf<Map<String, Any>>()
@@ -54,27 +60,20 @@ class UpiLauncherModule : Module() {
     }
 
     Events("UpiLauncherEvent")
-  }
-
-  override fun onActivityResult(
-    activity: Activity,
-    requestCode: Int,
-    resultCode: Int,
-    data: Intent?
-  ) {
-    super.onActivityResult(activity, requestCode, resultCode, data)
-    if (requestCode != REQUEST_CODE_UPI) return
-    pendingPromise?.let { promise ->
-      val map = mutableMapOf<String, Any?>()
-      map["action"] = data?.action
-      map["data"] = data?.data?.toString()
-      map["extras"] = data?.extras?.keySet()?.joinToString(",") ?: "none"
-      promise.resolve(map)
-      pendingPromise = null
+    OnActivityResult { _, payload ->
+      if (payload.requestCode == REQUEST_CODE_UPI) {
+        pendingPromise?.let { promise ->
+          val map = mutableMapOf<String, Any?>()
+          map["action"] = payload.data?.action
+          map["data"] = payload.data?.data?.toString()
+          val extras = payload.data?.extras?.keySet()?.map { key ->
+            "$key=${payload.data?.extras?.get(key)}"
+          }?.joinToString(", ") ?: "none"
+          map["extras"] = extras
+          promise.resolve(map)
+          pendingPromise = null
+        }
+      }
     }
-  }
-
-  companion object {
-    private const val REQUEST_CODE_UPI = 1001
   }
 }
