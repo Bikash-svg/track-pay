@@ -21,7 +21,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 |---|---|---|---|
 | 0.1 | Confirm the baseline | [x] | Approved 2026-10-16. `npx expo install --check` → "Dependencies are up to date". `npm ci --dry-run --include=dev` → "up to date". `npx tsc --noEmit` → clean. `npm run lint:guardrails` → "Guardrail check passed." `npm test` → 1 suite, 1 test passed. `git status` → clean working tree. |
 | 0.2 | Make EAS builds work | [x] | Approved 2026-10-16. Created eas.json (preview + production profiles, node pinned 20.19.4). .nvmrc already 20.19.4. .npmrc restored from git (legacy-peer-deps=false, fund=false). package.json engines pinned to "20.19.4". .gitignore has /android and /ios. modules/upi-launcher/android does not exist (no modules/ dir). Checks: expo install --check → up to date; npm ci --dry-run --include=dev → up to date (EBADENGINE warning only: local node v24.19.0 vs engines 20.19.4); tsc clean; guardrails passed; tests 1 passed. eas build -p android --profile preview could not run: EAS project not configured (needs eas init), no device for APK install. Blocker note on lock file resolved — lock file in sync. |
-| 0.3 | Notification library spike | [ ] | |
+| 0.3 | Notification library spike | [~] | Installed react-native-notify-kit@^10.8.1 via npx expo install. Config plugin "react-native-notify-kit" added to app.json plugins. Android permissions: POST_NOTIFICATIONS, WAKE_LOCK, ACCESS_NETWORK_STATE, RECEIVE_BOOT_COMPLETED, VIBRATE, INTERNET, FOREGROUND_SERVICE, SCHEDULE_EXACT_ALARM, ACCESS_NOTIFICATION_POLICY (minSdk 23). Checks: expo install --check → up to date; npm ci --dry-run --include=dev → up to date (EBADENGINE warning only: local node v24.19.0 vs engines 20.19.4); tsc clean; guardrails passed; tests 1 passed. Device check (R6, R7, R10 on real phone) not done — no real phone available. Library choice recorded: react-native-notify-kit. |
 | 0.4 | UPI result spike | [ ] | |
 | 0.5 | Rename to Track Pay | [ ] | |
 
@@ -225,6 +225,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 9. Calendar upgrades (Step 5.8). [default: skip until asked]
 10. Dialog radius and light-mode scrim (not in the design). [default: radius 16; scrim `rgba(15,23,42,0.45)`]
 11. Notification library (Step 0.3) is decided by the spike. [default: react-native-notify-kit, fallback expo-notifications]
+12. Android permission from react-native-notify-kit: INTERNET and SCHEDULE_EXACT_ALARM need a decision after the 0.3 phone test. [default: try blocking both in preview and production builds and re-test R8, R9 and R10; update the permissions section of GUARDRAILS.md with whatever is accepted; re-check the real permission list on the release build in Step 9.4]
 
 ## Log
 

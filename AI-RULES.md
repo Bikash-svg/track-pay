@@ -11,6 +11,7 @@ You are an AI model building this app for one person. Follow these rules exactly
 - Do not add dependencies, permissions or files the step does not list. Ask first.
 - Do not raise questions already answered in the Decisions table in `BUILD-TODO.md`.
 - After each step, end with the section 8 report, then stop and wait for approval. Do not start the next step until the owner says so.
+- Do not touch the engines in the package.json
 
 ## 1. Read before you do anything (every session)
 
