@@ -12,11 +12,7 @@ export function Screen({ children, style }: ScreenProps) {
   const { tokens } = useTheme();
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: tokens.canvas }, style]}>
-      <View style={styles.content}>{children}</View>
+      <View style={{ padding: 16 }}>{children}</View>
     </SafeAreaView>
   );
 }
-
-const styles = {
-  content: { padding: 16 },
-};

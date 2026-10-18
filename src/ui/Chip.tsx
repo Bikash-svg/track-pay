@@ -1,4 +1,4 @@
-import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from './useTheme';
@@ -27,11 +27,7 @@ export function Chip({ children, style }: ChipProps) {
         style,
       ]}
     >
-      <Text style={styles.text}>{children}</Text>
+      <Text>{children}</Text>
     </View>
   );
 }
-
-const styles = {
-  text: { fontSize: 12 },
-};

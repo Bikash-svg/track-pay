@@ -9,9 +9,8 @@ interface FieldProps {
   readonly value: string;
   readonly onChangeText: (text: string) => void;
   readonly error?: string;
-  readonly keyboardType?: string;
   readonly accessibilityLabel?: string;
-  readonly style?: StyleProp<ViewStyle>;
+  readonly style?: ViewStyle;
 }
 
 export function Field({
@@ -19,44 +18,33 @@ export function Field({
   value,
   onChangeText,
   error,
-  keyboardType,
   accessibilityLabel,
   style,
 }: FieldProps) {
   const { tokens } = useTheme();
+  const parts: TextStyle[] = [
+    {
+      backgroundColor: tokens.interactive,
+      borderColor: tokens.border,
+      borderWidth: 1,
+      color: tokens.text,
+      minHeight: 44,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+  ];
   return (
     <View style={[{ marginBottom: 16 }, style]}>
-      <Text variant="secondary" style={styles.label}>
-        {label}
-      </Text>
+      <Text variant="secondary">{label}</Text>
       <TextInput
         accessible
         accessibilityLabel={accessibilityLabel ?? label}
         value={value}
         onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        style={[
-          styles.input,
-          {
-            backgroundColor: tokens.inputFill,
-            borderColor: tokens.border,
-            borderWidth: 1,
-            color: tokens.text,
-            minHeight: 44,
-          },
-        ]}
+        style={parts as StyleProp<TextStyle>}
       />
-      {error && (
-        <Text variant="muted" style={styles.error}>
-          {error}
-        </Text>
-      )}
+      {error && <Text variant="muted">{error}</Text>}
     </View>
   );
 }
-
-const styles = {
-  label: { marginBottom: 6 },
-  input: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
-  error: { marginTop: 4 },
-};

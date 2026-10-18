@@ -17,7 +17,7 @@ export function Toggle({
 }: ToggleProps) {
   const { tokens } = useTheme();
   return (
-    <View style={styles.container} collapsable={false}>
+    <View style={{ padding: 4 }}>
       <Switch
         accessible
         accessibilityLabel={accessibilityLabel}
@@ -32,7 +32,3 @@ export function Toggle({
     </View>
   );
 }
-
-const styles = {
-  container: { padding: 4 },
-};

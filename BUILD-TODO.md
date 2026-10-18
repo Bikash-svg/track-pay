@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 1.1 Semantic tokens
+**Current step, Track A:** 1.2 Plain primitives
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -41,7 +41,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
 | 1.1 | Semantic tokens | [x] | Approved 2026-10-18. tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). src/ui/theme.ts, types.ts, __tests__/theme.test.ts created; tsconfig alias updated. |
-| 1.2 | Plain primitives | [~] | |
+| 1.2 | Plain primitives | [~] | Built src/ui primitives (Text, Money, Button, Field, Card, Chip, StatusTag, Toggle, Banner, PayRow, Screen), useTheme, copy, PrimitivesDemo screen using every primitive, plus __tests__/primitives.test.tsx and __tests__/theme.test.ts. Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 7 passed (3 suites). Metro does not resolve tsconfig @/ paths; screens use relative imports. |
 | 1.3 | Navigation structure | [ ] | |
 | 1.4 | Dialog host | [ ] | |
 | 1.5 | Theme choice | [ ] | |
@@ -271,3 +271,5 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-18 | A 1.1 Semantic tokens | Read ARCHITECTURE-BUILD-PLAN.md Step 1.1, DESIGN-TOKENS.md, GUARDRAILS.md, tsconfig.json, package.json, scripts/check-guardrails.js, jest-expo and Metro alias handling. Recorded owner's `@/` alias decision; planned theme.ts, test and token values; no code written yet, awaiting approval. | BUILD-TODO.md |
 
 | 2026-10-18 | A 1.1 Semantic tokens | Built src/ui/theme.ts (small set: canvas, card, interactive, border, primary, onPrimary, positive, caution, negative, text, textSecondary, textMuted, positiveTint, cautionTint, negativeTint) with TokenName-typed dark/light palettes; added src/ui/__tests__/theme.test.ts (palette completeness + hex-outside-theme scan excluding theme.ts and app/upi-spike.tsx); changed tsconfig "@/*" to "./src/*". Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). Metro does not resolve tsconfig paths (no tsconfigPaths in app.json experiments or @expo/cli), so screens use relative imports. | BUILD-TODO.md |
+
+| 2026-10-18 | A 1.2 Plain primitives | Built src/ui: useTheme.tsx (ThemeProvider + useTheme), copy.ts, Text, Money, Button, Field, Card, Chip, StatusTag, Toggle, Banner, PayRow, Screen primitives, PrimitivesDemo screen using every primitive; tests in __tests__/theme.test.ts and __tests__/primitives.test.tsx. Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 7 passed (3 suites). Every primitive is used by PrimitivesDemo; none contains business logic. Metro does not resolve tsconfig @/ paths; screens use relative imports. | BUILD-TODO.md |

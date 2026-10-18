@@ -1,6 +1,6 @@
-import type { StyleProp, ViewStyle, TextStyle } from 'react-native';
+import type { TextStyle, ViewStyle } from 'react-native';
 import React from 'react';
-import { Pressable, Text, StyleSheet, View } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import { useTheme } from './useTheme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'text';
@@ -11,7 +11,7 @@ interface ButtonProps {
   readonly onPress?: () => void;
   readonly disabled?: boolean;
   readonly accessibilityLabel?: string;
-  readonly style?: StyleProp<ViewStyle>;
+  readonly style?: ViewStyle;
 }
 
 export function Button({
@@ -24,20 +24,13 @@ export function Button({
 }: ButtonProps) {
   const { tokens } = useTheme();
   const isText = variant === 'text';
-  const base: ViewStyle = {
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-  };
   let bg: string;
   let color: string;
   if (isText) {
     bg = 'transparent';
-    color = tokens.primaryText;
+    color = tokens.primary;
   } else if (variant === 'secondary') {
-    bg = tokens.ghostFill;
+    bg = tokens.interactive;
     color = tokens.text;
   } else if (variant === 'danger') {
     bg = tokens.negative;
@@ -46,12 +39,18 @@ export function Button({
     bg = tokens.primary;
     color = tokens.onPrimary;
   }
-  const containerStyle: ViewStyle = {
-    ...base,
-    backgroundColor: disabled ? tokens.interactive : bg,
-    opacity: disabled ? 0.4 : undefined,
-    ...style,
-  };
+  const parts: ViewStyle[] = [
+    {
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 8,
+      paddingHorizontal: 16,
+      backgroundColor: disabled ? tokens.interactive : bg,
+      opacity: disabled ? 0.4 : undefined,
+    },
+  ];
+  if (style) parts.push(style);
   const textStyle: TextStyle = { color, fontWeight: '600' };
   return (
     <Pressable
@@ -59,11 +58,9 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={disabled ? undefined : onPress}
-      style={containerStyle}
+      style={parts}
     >
       <Text style={textStyle}>{children}</Text>
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({});

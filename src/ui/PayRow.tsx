@@ -1,7 +1,6 @@
-import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { ViewStyle } from 'react-native';
 import React from 'react';
 import { Pressable, View } from 'react-native';
-import { Chip } from './Chip';
 import { Money } from './Money';
 import { StatusTag } from './StatusTag';
 import { Text } from './Text';
@@ -17,7 +16,7 @@ interface PayRowProps {
   readonly date: string;
   readonly onPress?: () => void;
   readonly accessibilityLabel?: string;
-  readonly style?: StyleProp<ViewStyle>;
+  readonly style?: ViewStyle;
 }
 
 export function PayRow({
@@ -31,56 +30,38 @@ export function PayRow({
   style,
 }: PayRowProps) {
   const { tokens } = useTheme();
+  const parts: ViewStyle[] = [
+    {
+      backgroundColor: tokens.card,
+      borderColor: tokens.border,
+      borderWidth: 1,
+      borderRadius: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      minHeight: 56,
+    },
+  ];
+  if (style) parts.push(style);
   return (
     <Pressable
       accessible
-      accessibilityRole="listitem"
+      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? name}
       onPress={onPress}
-      style={[
-        {
-          backgroundColor: tokens.card,
-          borderColor: tokens.border,
-          borderWidth: 1,
-          borderRadius: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          padding: 12,
-          minHeight: 56,
-        },
-        style,
-      ]}
+      style={parts}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{avatarLetter}</Text>
+      <View style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+        <Text>{avatarLetter}</Text>
       </View>
-      <View style={styles.body}>
-        <Text style={styles.name}>{name}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 14 }}>{name}</Text>
       </View>
-      <View style={styles.side}>
-        <Money paise={amountPaise} style={styles.amount} />
+      <View style={{ alignItems: 'flex-end' }}>
+        <Money paise={amountPaise} />
         <StatusTag status={status} />
-        <Text variant="muted" style={styles.date}>
-          {date}
-        </Text>
+        <Text variant="muted">{date}</Text>
       </View>
     </Pressable>
   );
 }
-
-const styles = {
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: { fontSize: 16 },
-  body: { flex: 1 },
-  name: { fontSize: 14 },
-  side: { alignItems: 'flex-end' },
-  amount: { fontSize: 16, marginBottom: 4 },
-  date: { fontSize: 12 },
-};
