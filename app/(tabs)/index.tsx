@@ -4,18 +4,42 @@ import { Field } from '../../src/ui/Field';
 import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
 import { useDialog } from '../../src/ui/DialogProvider';
+import { useTheme } from '../../src/ui/useTheme';
 
 export default function HomeScreen() {
   const { open, close } = useDialog();
+  const { theme, effectiveTheme, setTheme } = useTheme();
 
-  // Dev-only trigger for Step 1.4's device check. `__DEV__` is React
-  // Native's built-in global (declared in react-native/src/types/globals.d.ts)
-  // and is false in release builds, so this button never ships.
+  // Dev-only theme trigger for Step 1.5's Done-when. Real Settings UI is
+  // Step 7.2. `__DEV__` is React Native's built-in global and is false in
+  // release builds, so these buttons never ship.
   if (__DEV__) {
     return (
       <Screen>
         <Text>Home</Text>
         <Text variant="muted">Built in Phase 3.</Text>
+        <Text>Theme (dev): {theme} · effective {effectiveTheme}</Text>
+        <Button
+          variant={theme === 'dark' ? 'primary' : 'secondary'}
+          accessibilityLabel="Set theme to dark (dev)"
+          onPress={() => setTheme('dark')}
+        >
+          Dark
+        </Button>
+        <Button
+          variant={theme === 'light' ? 'primary' : 'secondary'}
+          accessibilityLabel="Set theme to light (dev)"
+          onPress={() => setTheme('light')}
+        >
+          Light
+        </Button>
+        <Button
+          variant={theme === 'auto' ? 'primary' : 'secondary'}
+          accessibilityLabel="Set theme to auto (dev)"
+          onPress={() => setTheme('auto')}
+        >
+          Auto
+        </Button>
         <Button
           accessibilityLabel="Show dialog (dev)"
           onPress={() =>
