@@ -14,7 +14,8 @@ export type TokenName =
   | 'textMuted'
   | 'positiveTint'
   | 'cautionTint'
-  | 'negativeTint';
+  | 'negativeTint'
+  | 'scrim';
 
 export const TOKEN_NAMES: readonly TokenName[] = [
   'canvas',
@@ -32,4 +33,5 @@ export const TOKEN_NAMES: readonly TokenName[] = [
   'positiveTint',
   'cautionTint',
   'negativeTint',
+  'scrim',
 ];

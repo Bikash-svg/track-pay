@@ -21,6 +21,7 @@ export const dark: Palette = {
   positiveTint: 'rgba(52,211,153,0.12)',
   cautionTint: 'rgba(251,191,36,0.12)',
   negativeTint: 'rgba(248,113,113,0.12)',
+  scrim: 'rgba(6,9,14,0.78)',
 };
 
 export const light: Palette = {
@@ -39,6 +40,7 @@ export const light: Palette = {
   positiveTint: 'rgba(16,185,129,0.12)',
   cautionTint: 'rgba(245,158,11,0.12)',
   negativeTint: 'rgba(244,63,94,0.12)',
+  scrim: 'rgba(15,23,42,0.45)',
 };
 
 export const tokens = { dark, light };

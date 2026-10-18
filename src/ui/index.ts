@@ -12,4 +12,14 @@ export { Banner } from './Banner';
 export { PayRow, type PayRowStatus } from './PayRow';
 export { Screen } from './Screen';
 export { TabBar } from './TabBar';
+export {
+  dark,
+  light,
+  tokens,
+  TOKEN_NAMES,
+  type Theme,
+} from './theme';
+export { Dialog, type DialogProps } from './Dialog';
+export { DialogHost } from './DialogHost';
+export { DialogProvider, useDialog, type DialogOptions } from './DialogProvider';
 export type { ButtonVariant } from './Button';
