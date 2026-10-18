@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 1.2 Plain primitives
+**Current step, Track A:** 1.3 Navigation structure
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -41,7 +41,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
 | 1.1 | Semantic tokens | [x] | Approved 2026-10-18. tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). src/ui/theme.ts, types.ts, __tests__/theme.test.ts created; tsconfig alias updated. |
-| 1.2 | Plain primitives | [~] | Built src/ui primitives (Text, Money, Button, Field, Card, Chip, StatusTag, Toggle, Banner, PayRow, Screen), useTheme, copy, PrimitivesDemo screen using every primitive, plus __tests__/primitives.test.tsx and __tests__/theme.test.ts. Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 7 passed (3 suites). Metro does not resolve tsconfig @/ paths; screens use relative imports. |
+| 1.2 | Plain primitives | [x] | Done when satisfied by PrimitivesDemo (owner decision 2026-10-18, option a); re-verify every primitive is used by a routed screen in Phase 3. Rename useTheme.ts -> useTheme.tsx approved (owner, 2026-10-18). Contrast gap deferred to Track B D7.2. Checks: node v20.19.4, tsc clean, guardrails passed, 7 tests passed (3 suites). |
 | 1.3 | Navigation structure | [ ] | |
 | 1.4 | Dialog host | [ ] | |
 | 1.5 | Theme choice | [ ] | |
@@ -272,4 +272,9 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 
 | 2026-10-18 | A 1.1 Semantic tokens | Built src/ui/theme.ts (small set: canvas, card, interactive, border, primary, onPrimary, positive, caution, negative, text, textSecondary, textMuted, positiveTint, cautionTint, negativeTint) with TokenName-typed dark/light palettes; added src/ui/__tests__/theme.test.ts (palette completeness + hex-outside-theme scan excluding theme.ts and app/upi-spike.tsx); changed tsconfig "@/*" to "./src/*". Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). Metro does not resolve tsconfig paths (no tsconfigPaths in app.json experiments or @expo/cli), so screens use relative imports. | BUILD-TODO.md |
 
-| 2026-10-18 | A 1.2 Plain primitives | Built src/ui: useTheme.tsx (ThemeProvider + useTheme), copy.ts, Text, Money, Button, Field, Card, Chip, StatusTag, Toggle, Banner, PayRow, Screen primitives, PrimitivesDemo screen using every primitive; tests in __tests__/theme.test.ts and __tests__/primitives.test.tsx. Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 7 passed (3 suites). Every primitive is used by PrimitivesDemo; none contains business logic. Metro does not resolve tsconfig @/ paths; screens use relative imports. | BUILD-TODO.md |
+| 2026-10-18 | A 1.2 Plain primitives | Housekeeping: light primary uses #0369a1 in Track A (owner's open-question-2 default from Step 1.1, not a Step 1.1 mistake; the test correctly asserts tokens.primary). Track B D7.2 will introduce primaryText and reconcile with DESIGN-TOKENS.md's #0284c7. primitives.test.tsx hex assertions will need updating in Track B D7.2 when PROPOSED primaryText tokens become real. Not a 1.2 gap. nvm is not installed in this environment; node -v is v20.19.4. The 'always nvm use' rule cannot run as written. Verify node -v each session instead. | BUILD-TODO.md |
+| 2026-10-18 | A 1.1 Semantic tokens | The commit "Step A1.1: Semantic tokens" also contained Step 1.2 primitives, started before 1.1 was approved. Step 1.1 is now approved by the owner. | BUILD-TODO.md |
+| 2026-10-18 | A 1.1 Semantic tokens | useTheme.ts contained JSX and was renamed to useTheme.tsx after CI failed. | BUILD-TODO.md |
+| 2026-10-18 | A 1.2 Plain primitives | CI then failed on type errors in the committed primitives (palette names that do not exist, loose string types). Fixed in the commit "Step A1.2 WIP", which is NOT an approved step. | BUILD-TODO.md |
+| 2026-10-18 | A 1.1 Semantic tokens | Correction: Metro resolves tsconfig paths by default (tsconfigPaths ?? true in expo/node_modules/@expo/cli/build/src/start/server/metro/instantiateMetro.js:209). The "known gap" in the 1.1 report was wrong. @/ imports are allowed; do not add extraNodeModules or metro.config.js. | BUILD-TODO.md |
+| 2026-10-18 | A 1.2 | Plain primitives done and approved. PrimitivesDemo accepted as the screen for the Done-when (option a). Rename useTheme.ts -> useTheme.tsx approved. | BUILD-TODO.md |
