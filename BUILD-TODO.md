@@ -40,8 +40,8 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 1.1 | Semantic tokens | [ ] | |
-| 1.2 | Plain primitives | [ ] | |
+| 1.1 | Semantic tokens | [x] | Approved 2026-10-18. tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). src/ui/theme.ts, types.ts, __tests__/theme.test.ts created; tsconfig alias updated. |
+| 1.2 | Plain primitives | [~] | |
 | 1.3 | Navigation structure | [ ] | |
 | 1.4 | Dialog host | [ ] | |
 | 1.5 | Theme choice | [ ] | |
@@ -223,6 +223,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 |---|---|---|
 | 2026-10-16 | SCREENS_SPEC.md and build_plan.md will not exist. References removed. | owner |
 | 2026-10-17 | Notification library is react-native-notify-kit 10.8.1 (expo-notifications not tested because notify-kit passed). | owner |
+| 2026-10-18 | The `@/` alias points to `./src/*`; `tsconfig.json` `"@/*"` changed from `["./*"]` to `["./src/*"]`. No source imports `@/` yet, so nothing breaks. Jest resolves it via jest-expo `withTypescriptMapping`; Metro does not resolve tsconfig paths, so screens should use relative imports until `extraNodeModules` is added. | owner |
 
 ## Open questions (ask before guessing; defaults in brackets)
 
@@ -267,3 +268,6 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-17 | A 0.5 Rename to Track Pay | Verified: grep -ri vaultx src app.config.js → zero matches; app.json already "Track Pay"; android package already com.bkas.trackpay; no app.config.js exists; checks pass (tsc clean, lint:guardrails passed, npm test 1 passed). Done-when met. | BUILD-TODO.md |
 | 2026-10-17 | A 0.5 Rename to Track Pay | Full-project grep -rni vaultx --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=android → only document hits (README.md:6, EVALS.md:177, AI-RULES.md:49, ARCHITECTURE-BUILD-PLAN.md:53); no user-visible VaultX strings in code, notification titles, channel names, or spike screens. grep -rni vaultx src app app.json modules → nothing (exit 1). npm run check passed: tsc clean, lint:guardrails passed, npm test 1 passed. Proposed document wording listed in writing; no documents edited. | BUILD-TODO.md |
 | 2026-10-17 | A 0.5 Rename to Track Pay | Applied document edits: README.md line 6 → "The product is called Track Pay." AI-RULES.md D1 → "The old name VaultX no longer appears in code." ARCHITECTURE-BUILD-PLAN.md Step 0.5 Done-when → `grep -ri vaultx src app.json`. Marked [x]; current step moved to 1.1 | BUILD-TODO.md |
+| 2026-10-18 | A 1.1 Semantic tokens | Read ARCHITECTURE-BUILD-PLAN.md Step 1.1, DESIGN-TOKENS.md, GUARDRAILS.md, tsconfig.json, package.json, scripts/check-guardrails.js, jest-expo and Metro alias handling. Recorded owner's `@/` alias decision; planned theme.ts, test and token values; no code written yet, awaiting approval. | BUILD-TODO.md |
+
+| 2026-10-18 | A 1.1 Semantic tokens | Built src/ui/theme.ts (small set: canvas, card, interactive, border, primary, onPrimary, positive, caution, negative, text, textSecondary, textMuted, positiveTint, cautionTint, negativeTint) with TokenName-typed dark/light palettes; added src/ui/__tests__/theme.test.ts (palette completeness + hex-outside-theme scan excluding theme.ts and app/upi-spike.tsx); changed tsconfig "@/*" to "./src/*". Checks: node v20.19.4; tsc --noEmit clean; lint:guardrails passed; npm test 4 passed (2 suites). Metro does not resolve tsconfig paths (no tsconfigPaths in app.json experiments or @expo/cli), so screens use relative imports. | BUILD-TODO.md |
