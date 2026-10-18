@@ -72,6 +72,10 @@ This plan builds a **working version of the app with a plain look**. Every featu
 - **Build:** one reusable centred dialog: scrim, close button, tap outside and Back dismiss, scrolls if tall, keyboard-safe. Used by every popup.
 - **Done when:** centred on small and large phones with the keyboard open.
 
+#### Step 1.5a: Settings key-value store
+- **Build:** Install `@react-native-async-storage/async-storage` via `npx expo install`. Create `src/data/settings.ts` with a typed wrapper around it: `getTheme()` and `setTheme(theme)` at minimum, extended in Phase 2.1 for the profile fields (`firstName`, `surname`, `avatarUri`, `onboarded`). Include a storage-availability check (a function the tests can stub) so the layer is mockable. Do not add Phase 2 profile fields here.
+- **Done when:** round-trip test passes: `setTheme('light')` then `getTheme()` returns `'light'`. Storage dependency installed via `npx expo install`. `npx expo install --check` reports nothing.
+
 #### Step 1.5: Theme choice
 - **Build:** Dark, Light and Auto (follows the phone), persisted, status bar follows.
 - **Done when:** switching updates every screen without a restart.
