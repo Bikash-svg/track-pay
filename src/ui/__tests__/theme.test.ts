@@ -11,8 +11,7 @@ const HEX = /#([0-9a-fA-F]{3,8})\b/g;
 
 // theme.ts legitimately holds the token hex/rgba values; every other source
 // file must be free of colour hex literals.
-// app/upi-spike.tsx contains placeholder hex colours: removed when real screens replace them.
-const EXCLUDED_FILES = new Set(['src/ui/theme.ts', 'app/upi-spike.tsx']);
+const EXCLUDED_FILES = new Set(['src/ui/theme.ts']);
 
 interface Violation {
   file: string;

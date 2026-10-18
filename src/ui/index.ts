@@ -11,4 +11,5 @@ export { Toggle } from './Toggle';
 export { Banner } from './Banner';
 export { PayRow, type PayRowStatus } from './PayRow';
 export { Screen } from './Screen';
+export { TabBar } from './TabBar';
 export type { ButtonVariant } from './Button';
