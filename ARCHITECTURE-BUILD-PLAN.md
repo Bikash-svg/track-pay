@@ -102,7 +102,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 - **Done when:** On device: the top heading of every tab screen is fully visible below the status bar; the tab bar is fully visible above the navigation bar; tapping any top or bottom control works. Verified on device.
 
 #### Step 2.3: Onboarding form
-- **Build:** "Step 1 of 2" text, Skip for now, First name and Surname fields, live greeting preview text, Continue. **Step 2 of 2 s not described in the design documents. Proposed: an optional monthly limit (amount field, "Skip for now", "Continue to App").** Ask before building step 2.
+- **Build:** Skip for now, First name and Surname fields, live greeting preview text, Continue. **Step 2 of 2 (monthly limit) deferred to 7.3; BUILD-TODO open question 3 resolved to single-step for 2.3.**
 - **Done when:** preview updates as you type; Continue saves; Skip leaves the name empty and opens Home.
 
 #### Step 2.4: Launch routing

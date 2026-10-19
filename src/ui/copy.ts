@@ -35,4 +35,8 @@ export const copy = {
   toWhom: 'To whom',
   whatWasThisFor: 'What was this for?',
   exportData: 'Export data',
+  skipForNow: 'Skip for now',
+  firstName: 'First name',
+  surname: 'Surname',
+  continueLabel: 'Continue',
 } as const;

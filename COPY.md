@@ -8,7 +8,6 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 
 ## Onboarding
 
-- Step 1 of 2
 - Skip for now
 - First name
 - Surname
