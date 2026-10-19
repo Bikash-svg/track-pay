@@ -359,6 +359,8 @@ Part A above is the design system. Part B says **how and in what order to apply 
 - **Build:** 16 px side margin, 12 px gutter, section breaks 40, safe areas, bottom room for the pod, scroll fades at top and bottom (gradient overlays).
 - **Done when:** nothing hides behind the status bar or pod on three phone sizes.
 
+**Plan note (2026-10-19, owner-approved):** Inset application is Track A 2.2a — `Screen` and `TabBar` read insets via `useSafeArea insets` from `react-native-safe-area-context` (already installed via expo-router). D3.1 consumes the resulting spacing and does not re-apply insets.
+
 #### D3.2: Floating pod navigation
 - **Build:** bottom-centre capsule about 20 px above the bottom; Dark `rgba(19,25,36,0.72)`, Light `rgba(255,255,255,0.8)`; 1px border `rgba(255,255,255,0.1)`; optional blur (16 to 20) with a solid fallback; glowing cyan active pill and a small dot; pressed scale 0.95.
 - **Done when:** active state is clear in both themes; labels follow B1 item 7.

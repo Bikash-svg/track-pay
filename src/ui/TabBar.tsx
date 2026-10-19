@@ -1,11 +1,15 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { useTheme } from './useTheme';
 
 export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
   const { tokens } = useTheme();
+  // paddingBottom = insets.bottom so the bar clears the Android navigation bar
+  // on edge-to-edge devices.
+  const insets = useSafeAreaInsets();
   return (
     <View
       style={{
@@ -14,6 +18,7 @@ export function TabBar({ state, navigation, descriptors }: BottomTabBarProps) {
         borderTopColor: tokens.border,
         borderTopWidth: 1,
         paddingVertical: 4,
+        paddingBottom: insets.bottom,
       }}
     >
       {state.routes.map((route, index) => {
