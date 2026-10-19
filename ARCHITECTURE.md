@@ -111,6 +111,8 @@ Totals are only as complete as what the user records; each analytics screen says
 
 **Onboarding:** splash waits for the database and settings to load, then routes: first launch goes to onboarding, otherwise Home. Skip sets `onboarded` and leaves the name empty.
 
+**Plan note (2026-10-18, owner-approved):** "Database" resolves to the Phase 3 payments store; today the splash gate keys off `loadAppData()` (`src/data/loading.ts`), which loads settings/theme and profile only. **Ownership boundary (permanent):** 2.2 owns the splash gate and "routes on" (to `/home` in 2.2's scope); 2.4 owns the `onboarded` branch and the "first launch goes to onboarding" behavior. The 1.5 theme-flash gap closes in 2.2 via `expo-splash-screen.preventAutoHideAsync()` at module scope and `hideAsync()` after the load resolves.
+
 ## 9. Notifications
 
 Channels: "Payment confirmations" (high), "Hourly reminders" (default), "Quick add" (low, ongoing). Lock-screen details are hidden by default. Actions handled while the app is closed must be verified on a real phone (Step 0.3) before any notification feature is built. All notification code lives in `src/notifications` so the library can be swapped.

@@ -92,6 +92,15 @@ This plan builds a **working version of the app with a plain look**. Every featu
 - **Build:** a plain screen with the name and a progress indicator that ends only when the database and settings have loaded; then routes on.
 - **Done when:** works with no network (EVALS D7); never shows an empty Home first.
 
+**Plan notes (2026-10-18, owner-approved):**
+- The gate keys off a single `loadAppData()` call (`src/data/loading.ts`). "Database" resolves to the Phase 3 payments store (Steps 3.x/4.x), which does not exist yet — 2.2 gates on settings/profile only. This is a wording gap in the build line, not a code gap; no schema change, so GUARDRAILS §5.1 (numbered migration per schema change) does not apply.
+- **Ownership boundary (permanent):** 2.2 owns the splash gate and "routes on" — in 2.2's scope that means routing to `/home` on every launch. 2.4 owns the `onboarded` branch and the "first launch goes to onboarding" behavior. O2 and O6 are formally 2.4's tests; do not claim them in 2.2.
+- The 1.5 theme-flash gap closes here: `expo-splash-screen.preventAutoHideAsync()` at module scope in `app/_layout.tsx`, `hideAsync()` after `loadAppData()` resolves (including on failure).
+
+#### Step 2.2a: Safe area insets
+- **Build:** Verify whether `expo-router` already provides `<SafeAreaProvider>` (grep `app src` for `SafeAreaProvider`). If not, wrap the root in `<SafeAreaProvider>` in `app/_layout.tsx`. Update `src/ui/Screen.tsx` to use `useSafeAreaInsets()` — top inset added to padding, bottom inset added so content clears the Android navigation bar. Update `src/ui/TabBar.tsx` to add `insets.bottom` padding. No new dependency: `react-native-safe-area-context` ships with `expo-router`.
+- **Done when:** On device: the top heading of every tab screen is fully visible below the status bar; the tab bar is fully visible above the navigation bar; tapping any top or bottom control works. Verified on device.
+
 #### Step 2.3: Onboarding form
 - **Build:** "Step 1 of 2" text, Skip for now, First name and Surname fields, live greeting preview text, Continue. **Step 2 of 2 s not described in the design documents. Proposed: an optional monthly limit (amount field, "Skip for now", "Continue to App").** Ask before building step 2.
 - **Done when:** preview updates as you type; Continue saves; Skip leaves the name empty and opens Home.

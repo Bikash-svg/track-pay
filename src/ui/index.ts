@@ -22,4 +22,6 @@ export {
 export { Dialog, type DialogProps } from './Dialog';
 export { DialogHost } from './DialogHost';
 export { DialogProvider, useDialog, type DialogOptions } from './DialogProvider';
+export { Splash } from './Splash';
+export { SplashGate } from './SplashGate';
 export type { ButtonVariant } from './Button';
