@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 3.1 Month statistics (domain)
+**Current step, Track A:**  3.2  Spend summary
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -64,7 +64,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 3.1 | Month statistics (domain) | [ ] | |
+| 3.1 | Month statistics (domain) | [x] | computeMonthStats in src/domain/monthStats.ts. Helpers daysInMonth/daysElapsed/daysRemaining exported. Null limit-dependent fields when limit null or ≤0. Rupee-level floor on allowancePerDay=56800 (A9). Math.max last-day guard. Level: <80 ok, 80-100 warn, >100 over. **Source verified via one-shot tsx: all 12 A9 fields matched exactly** (independent of tests). Test file: 14 tests covering A5/A6 level/A7 null fields/A8/A9/A10. tsc clean, 73 tests pass (was 59). Test file written by owner after 6 AI rounds failed to produce working tests — the AI's source was correct the whole time. **Not proven in 3.1 (correctly deferred):** A1 aggregation → Phase 4/5; A6 rendering "bar amber/red" → 3.2; A7 rendering "no limit element" → 3.2; A13 cross-screen consistency → 9.1. Phone verification of 3.1's math happens via 3.2's rendered numbers. |
 | 3.2 | Spend summary | [ ] | |
 | 3.3 | Pending banner | [ ] | |
 | 3.4 | Quick actions | [ ] | |
