@@ -2,7 +2,7 @@
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:**  3.2  Spend summary
+**Current step, Track A:**  3.3  Pending banner
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -65,7 +65,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
 | 3.1 | Month statistics (domain) | [x] | computeMonthStats in src/domain/monthStats.ts. Helpers daysInMonth/daysElapsed/daysRemaining exported. Null limit-dependent fields when limit null or ≤0. Rupee-level floor on allowancePerDay=56800 (A9). Math.max last-day guard. Level: <80 ok, 80-100 warn, >100 over. **Source verified via one-shot tsx: all 12 A9 fields matched exactly** (independent of tests). Test file: 14 tests covering A5/A6 level/A7 null fields/A8/A9/A10. tsc clean, 73 tests pass (was 59). Test file written by owner after 6 AI rounds failed to produce working tests — the AI's source was correct the whole time. **Not proven in 3.1 (correctly deferred):** A1 aggregation → Phase 4/5; A6 rendering "bar amber/red" → 3.2; A7 rendering "no limit element" → 3.2; A13 cross-screen consistency → 9.1. Phone verification of 3.1's math happens via 3.2's rendered numbers. |
-| 3.2 | Spend summary | [ ] | |
+| 3.2 | Spend summary | [x] | Approved 2026-10-19 by the owner after device verification. **Done-when:** "numbers match step 3.1 and update after a payment is added." — Part 1 (numbers match 3.1) VERIFIED on device via A9 preset: ₹3,630 / Limit ₹15,000 / bar 24% primary / "₹11,370 left · about ₹568 a day for 20 days" / "₹330 a day on average" — all values match 3.1's tsx-verified A9 output exactly. Part 2 (update after payment added) DEFERRED to Step 4.9 (first step with a real payment) — no payments exist today; dev override shows the rendering but not the update path. Both parts addressed; [x] justified because Part 2 is Phase 4's evidence, not 3.2's. **Implementation:** src/ui/barColour.ts (A6: ok→primary, warn→caution, over→negative, null→primary; 4 unit tests). src/ui/SpendCard.tsx renders "Spend on {Month}" + amount always; limit-on adds limit text + 4px progress bar (level-driven colour, 100%-clamped width) + overBy/xLeft/leftPerDay selector + daily average. app/(tabs)/index.tsx: SpendCard + __DEV__ DevSection preserving 1.4 dialog and 1.5 theme triggers, adds 5 preset buttons (default/A9/80%/over/no-limit). **Device checks (7 + 2 sub):** (1) Default 0/null shows label+amount only (DESIGN.md §1); (2) A9 preset matches 3.1; (3) 80% bar turns caution; (4) Over preset bar turns negative, shows "Over by ₹150"; (5) No limit preset shows ₹3,630 only; (6) Safe area correct; (7a) Tab bar 4 tabs switch; (7b) /pending and /scanner deep links open, Back returns to Home. No scrolling issue. **Known gaps:** (i) inline barHeight=4 — Track B D1.2 migrates; (ii) dev override only — no payments/store; (iii) Screen.tsx has no ScrollView — 3.2 fits, Phase 4+ may need it; (iv) "update after payment" deferred to 4.9. 77 tests total (was 73 + 4 barColour).
 | 3.3 | Pending banner | [ ] | |
 | 3.4 | Quick actions | [ ] | |
 | 3.5 | Recent payments | [ ] | |
@@ -249,6 +249,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 
 | Date | Track and step | What changed | Files |
 |---|---|---|---|
+| 2026-10-19 | A 3.2 Spend summary | Step 3.2 done. src/ui/barColour.ts (A6: ok→primary, warn→caution, over→negative, null→primary; 4 unit tests). src/ui/SpendCard.tsx renders 'Spend on {Month}' + amount always; limit-on adds limit text + 4px progress bar (level-driven colour, 100%-clamped width) + overBy/xLeft/leftPerDay selector + daily average. app/(tabs)/index.tsx: SpendCard + __DEV__ DevSection preserving 1.4 dialog and 1.5 theme triggers, adds 5 preset buttons (default/A9/80%/over/no-limit). Device-verified 7 checks + 2 deep-link sub-checks; A6/A7 rendering confirmed; 3.1's math verified visually via A9 preset. Inline barHeight=4 accepted. 'Update after payment' deferred to 4.9. 77 total tests (was 73 + 4 barColour). | src/ui/barColour.ts, src/ui/__tests__/barColour.test.ts, src/ui/SpendCard.tsx, src/ui/index.ts, app/(tabs)/index.tsx |
 | | | Project documents created | README, ARCHITECTURE, ARCHITECTURE-BUILD-PLAN, DESIGN-BUILD-PLAN, DESIGN, DESIGN-TOKENS, COPY, EVALS, GUARDRAILS, AI-RULES, BUILD-TODO, CLAUDE, AGENTS |
 | 2026-10-16 | A 0.1 Confirm the baseline | Ran all Done-when checks; all pass | BUILD-TODO.md |
 | 2026-10-16 | A 0.1 Confirm the baseline | Approved; marked [x]; current step moved to 0.2 | BUILD-TODO.md |
