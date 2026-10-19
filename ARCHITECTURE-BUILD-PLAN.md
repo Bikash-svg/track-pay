@@ -108,6 +108,7 @@ This plan builds a **working version of the app with a plain look**. Every featu
 #### Step 2.4: Launch routing
 - **Build:** first launch goes to onboarding, later launches to Home; profile editable in Settings.
 - **Done when:** fresh install, relaunch and clear-data behave correctly.
+- **Note (2026-10-19):** "profile editable in Settings" belongs to Step 7.1, not 2.4. 2.4's Done-when is "fresh install, relaunch and clear-data behave correctly" and does not include profile edit. The onboarded branch lives in `src/ui/SplashGate.tsx` as `<Redirect href="/onboarding" />` (declarative, not `router.replace` in an effect) and is owned by 2.4; 2.2 owns the splash gate and "routes on", 2.3 owns saving `onboarded:true` and navigating to Home.
 
 #### Step 2.5: Profile picture (optional, ask first)
 - **Build:** pick a photo for the avatar, kept only on the phone. Needs a new dependency and maybe a permission.

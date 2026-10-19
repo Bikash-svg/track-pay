@@ -1,8 +1,15 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { TabBar } from '../../src/ui/TabBar';
+import { useOnboarded } from '../../src/ui/SplashGate';
 
 export default function TabLayout() {
+  // Onboarded branch (2.4). The Stack is mounted above this layout, so
+  // <Redirect> navigates reliably here. Tabs never mount when unonboarded --
+  // no flash of Home or the tab bar.
+  const onboarded = useOnboarded();
+  if (!onboarded) return <Redirect href="/onboarding" />;
+
   return (
     <Tabs
       screenOptions={{ headerShown: false }}

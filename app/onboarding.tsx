@@ -4,6 +4,7 @@ import { setProfile } from '../src/data/settings';
 import { greeting } from '../src/domain/greeting';
 import { sanitizeName } from '../src/domain/profile';
 import { copy } from '../src/ui/copy';
+import { useSetOnboarded } from '../src/ui/SplashGate';
 import { Button } from '../src/ui/Button';
 import { Card } from '../src/ui/Card';
 import { Field } from '../src/ui/Field';
@@ -27,6 +28,10 @@ export default function OnboardingScreen() {
   const [firstName, setFirstName] = useState('');
   const [surname, setSurname] = useState('');
   const [saving, setSaving] = useState(false);
+  // 2.4: write onboarded=true back to the gate's context so the tabs layout
+  // re-renders with onboarded=true and renders <Tabs> instead of bouncing back
+  // to <Redirect>. Called before router.replace('/'), after setProfile resolves.
+  const setOnboarded = useSetOnboarded();
 
   // Live preview only. Does not save until Continue is tapped. Only the
   // first name reaches greeting(); the surname is stored but not shown here,
@@ -44,6 +49,7 @@ export default function OnboardingScreen() {
         onboarded: true,
         preferredUpiPackage: null,
       });
+      setOnboarded(true);
       router.replace('/');
     } catch (err) {
       if (__DEV__) console.warn('onboarding skip failed', err);
@@ -62,6 +68,7 @@ export default function OnboardingScreen() {
         onboarded: true,
         preferredUpiPackage: null,
       });
+      setOnboarded(true);
       router.replace('/');
     } catch (err) {
       if (__DEV__) console.warn('onboarding continue failed', err);
