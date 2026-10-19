@@ -1,6 +1,6 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import React from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from './useTheme';
 
@@ -18,7 +18,12 @@ export function Screen({ children, style }: ScreenProps) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[{ flex: 1, backgroundColor: tokens.canvas, paddingTop: insets.top }, style]}>
-      <View style={{ padding: 16 }}>{children}</View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+      >
+        {children}
+      </ScrollView>
     </View>
   );
 }
