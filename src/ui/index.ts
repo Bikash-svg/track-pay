@@ -12,6 +12,11 @@ export { Banner } from './Banner';
 export { PayRow, type PayRowStatus } from './PayRow';
 export { Screen } from './Screen';
 export { TabBar } from './TabBar';
+export { TopBar } from './TopBar';
+export {
+  PendingCountProvider,
+  usePendingCount,
+} from './PendingCountProvider';
 export {
   dark,
   light,

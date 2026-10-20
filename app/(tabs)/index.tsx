@@ -6,6 +6,7 @@ import { Text } from '../../src/ui/Text';
 import { SpendCard } from '../../src/ui/SpendCard';
 import { Banner } from '../../src/ui/Banner';
 import { useDialog } from '../../src/ui/DialogProvider';
+import { usePendingCount } from '../../src/ui/PendingCountProvider';
 import { useTheme } from '../../src/ui/useTheme';
 import { router } from 'expo-router';
 import { copy } from '../../src/ui/copy';
@@ -41,14 +42,14 @@ const DEV_SAMPLE_PAYMENTS = [
 export default function HomeScreen() {
   const [spent, setSpent] = useState(0);
   const [limit, setLimit] = useState<number | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
+  const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
   const now = new Date();
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
 
   return (
-    <Screen>
+    <Screen padTop={false}>
       <SpendCard stats={stats} month={month} />
 
       {/* Quick actions (DESIGN.md §1 item 2) */}
