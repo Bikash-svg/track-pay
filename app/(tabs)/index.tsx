@@ -10,6 +10,8 @@ import { useTheme } from '../../src/ui/useTheme';
 import { router } from 'expo-router';
 import { copy } from '../../src/ui/copy';
 import { computeMonthStats } from '../../src/domain/monthStats';
+import { dateLabel } from '../../src/domain/dateLabel';
+import { PayRow } from '../../src/ui/PayRow';
 import { View } from 'react-native';
 
 const DEV_PRESETS = [
@@ -20,10 +22,27 @@ const DEV_PRESETS = [
   { label: 'No limit (₹3,630 / null)', spent: 363000, limit: null },
 ] as const;
 
+const DEV_PAYMENT_PRESETS = [
+  { label: '0 payments', count: 0 },
+  { label: '2 payments', count: 2 },
+  { label: '4 payments', count: 4 },
+  { label: '6 payments', count: 6 },
+] as const;
+
+const DEV_SAMPLE_PAYMENTS = [
+  { avatarLetter: 'C', name: 'Cafe Mocha', amountPaise: 6000, category: 'Food', status: 'Done' as const, daysAgo: 0 },
+  { avatarLetter: 'B', name: 'Bikash Murmu', amountPaise: 4000, category: 'Other', status: 'Pending' as const, daysAgo: 1 },
+  { avatarLetter: 'T', name: 'Tea Stall', amountPaise: 2000, category: 'Food', status: 'Done' as const, daysAgo: 3 },
+  { avatarLetter: 'A', name: 'Auto Rickshaw', amountPaise: 8000, category: 'Transport', status: 'Done' as const, daysAgo: 10 },
+  { avatarLetter: 'N', name: 'Navi Kiosk', amountPaise: 15000, category: 'Shopping', status: 'Failed' as const, daysAgo: 40 },
+  { avatarLetter: 'F', name: 'Friend', amountPaise: 50000, category: 'Other', status: 'Done' as const, daysAgo: 400 },
+];
+
 export default function HomeScreen() {
   const [spent, setSpent] = useState(0);
   const [limit, setLimit] = useState<number | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [devPaymentCount, setDevPaymentCount] = useState(0);
   const now = new Date();
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
@@ -64,8 +83,51 @@ export default function HomeScreen() {
         </Banner>
       )}
 
+      {/* Recent Payments (DESIGN.md §1 item 5) — after the Banner, before DevSection */}
+      <Text variant="secondary">{copy.recentPayments}</Text>
+      {devPaymentCount === 0 ? (
+        <Text variant="muted">{copy.noPayments}</Text>
+      ) : (
+        DEV_SAMPLE_PAYMENTS.slice(0, Math.min(devPaymentCount, 4)).map((p, i) => {
+          const rowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - p.daysAgo);
+          return (
+            <PayRow
+              key={i}
+              avatarLetter={p.avatarLetter}
+              name={p.name}
+              amountPaise={p.amountPaise}
+              category={p.category}
+              status={p.status}
+              date={dateLabel(rowDate, now)}
+              accessibilityLabel={`${p.name}, ${p.category}`}
+              onPress={
+                // Done-when "tapping a row opens Edit" is Step 4.8's; dev-gated
+                // no-op today, no onPress in a release build.
+                __DEV__
+                  ? () => {
+                      console.warn('[3.5 dev] Row tap — Edit ships in Phase 4.8');
+                    }
+                  : undefined
+              }
+            />
+          );
+        })
+      )}
+      <Button variant="text" onPress={() => router.push('/history')} accessibilityLabel={copy.seeAll}>
+        {copy.seeAll}
+      </Button>
+
       {__DEV__ && (
-        <DevSection spent={spent} limit={limit} onSetSpent={setSpent} onSetLimit={setLimit} pendingCount={pendingCount} onSetPendingCount={setPendingCount} />
+        <DevSection
+          spent={spent}
+          limit={limit}
+          onSetSpent={setSpent}
+          onSetLimit={setLimit}
+          pendingCount={pendingCount}
+          onSetPendingCount={setPendingCount}
+          devPaymentCount={devPaymentCount}
+          onSetDevPaymentCount={setDevPaymentCount}
+        />
       )}
     </Screen>
   );
@@ -75,6 +137,8 @@ function DevSection({
   spent,
   limit,
   pendingCount,
+  devPaymentCount,
+  onSetDevPaymentCount,
   onSetSpent,
   onSetLimit,
   onSetPendingCount,
@@ -82,6 +146,8 @@ function DevSection({
   spent: number;
   limit: number | null;
   pendingCount: number;
+  devPaymentCount: number;
+  onSetDevPaymentCount: (n: number) => void;
   onSetSpent: (n: number) => void;
   onSetLimit: (n: number | null) => void;
   onSetPendingCount: (n: number) => void;
@@ -93,6 +159,17 @@ function DevSection({
     <>
       <Text variant="muted">Dev: spent {spent} · limit {limit ?? 'null'}</Text>
       <Text variant="muted">Pending (dev): {pendingCount}</Text>
+      <Text variant="muted">Payments (dev): {devPaymentCount}</Text>
+      {DEV_PAYMENT_PRESETS.map((preset) => (
+        <Button
+          key={preset.label}
+          variant={devPaymentCount === preset.count ? 'primary' : 'secondary'}
+          accessibilityLabel={`Set dev payment count to ${preset.count}`}
+          onPress={() => onSetDevPaymentCount(preset.count)}
+        >
+          {preset.label}
+        </Button>
+      ))}
       <Button
         variant={pendingCount === 0 ? 'primary' : 'secondary'}
         accessibilityLabel="Set dev pending count to 0"

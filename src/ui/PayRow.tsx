@@ -14,6 +14,7 @@ interface PayRowProps {
   readonly amountPaise: number;
   readonly status: PayRowStatus;
   readonly date: string;
+  readonly category?: string;
   readonly onPress?: () => void;
   readonly accessibilityLabel?: string;
   readonly style?: ViewStyle;
@@ -25,6 +26,7 @@ export function PayRow({
   amountPaise,
   status,
   date,
+  category,
   onPress,
   accessibilityLabel,
   style,
@@ -57,8 +59,10 @@ export function PayRow({
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 14 }}>{name}</Text>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Money paise={amountPaise} />
+<View style={{ alignItems: 'flex-end' }}>
+        <Text>
+          <Money paise={amountPaise} />{category ? ` · ${category}` : ''}
+        </Text>
         <StatusTag status={status} />
         <Text variant="muted">{date}</Text>
       </View>

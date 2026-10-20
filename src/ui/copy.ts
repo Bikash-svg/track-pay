@@ -18,6 +18,7 @@ export const copy = {
   review: 'Review',
   seeAll: 'See all',
   noPayments: 'No payments yet. Scan a QR or add one.',
+  recentPayments: 'Recent Payments',
   today: 'Today',
   friend: 'Friend',
   payment: 'Payment',
