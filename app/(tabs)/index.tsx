@@ -10,6 +10,7 @@ import { useTheme } from '../../src/ui/useTheme';
 import { router } from 'expo-router';
 import { copy } from '../../src/ui/copy';
 import { computeMonthStats } from '../../src/domain/monthStats';
+import { View } from 'react-native';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -27,35 +28,44 @@ export default function HomeScreen() {
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
 
-  // Banner placement is temporary (between SpendCard and DevSection).
-  // Step 3.4 will reposition below quick actions per DESIGN.md §1.
   return (
     <Screen>
       <SpendCard stats={stats} month={month} />
+
+      {/* Quick actions (DESIGN.md §1 item 2) */}
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+        <View style={{ flex: 1 }}>
+          <Button variant="primary" onPress={() => router.push('/scanner')} accessibilityLabel={copy.scanQR}>
+            {copy.scanQR}
+          </Button>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button variant="primary" onPress={() => router.push('/pay-to-friend')} accessibilityLabel={copy.payToFriend}>
+            {copy.payToFriend}
+          </Button>
+        </View>
+      </View>
+
+      {/* Pay button — purpose undecided (new BUILD-TODO open question #12) */}
+      {/* BUILD-TODO open question #12 — Pay button purpose undecided. Disabled until Phase 4 defines its flow. */}
+      <Button variant="secondary" disabled onPress={() => {}}>
+        {copy.pay}
+      </Button>
+
+      {/* Add payment already made (DESIGN.md §1 item 3) */}
+      <Button variant="secondary" onPress={() => router.push('/add-payment')} accessibilityLabel={copy.addPaymentAlreadyMade}>
+        {copy.addPaymentAlreadyMade}
+      </Button>
+
+      {/* Banner (DESIGN.md §1 item 4) — moved from 3.3's temporary spot */}
       {pendingCount > 0 && (
-        <Banner
-          action={
-            <Button
-              variant="text"
-              onPress={() => router.push('/pending')}
-              accessibilityLabel={copy.review}
-            >
-              {copy.review}
-            </Button>
-          }
-        >
+        <Banner action={<Button variant="text" onPress={() => router.push('/pending')} accessibilityLabel={copy.review}>{copy.review}</Button>}>
           {copy.paymentNeedsConfirming(pendingCount)}
         </Banner>
       )}
+
       {__DEV__ && (
-        <DevSection
-          spent={spent}
-          limit={limit}
-          pendingCount={pendingCount}
-          onSetSpent={setSpent}
-          onSetLimit={setLimit}
-          onSetPendingCount={setPendingCount}
-        />
+        <DevSection spent={spent} limit={limit} onSetSpent={setSpent} onSetLimit={setLimit} pendingCount={pendingCount} onSetPendingCount={setPendingCount} />
       )}
     </Screen>
   );
