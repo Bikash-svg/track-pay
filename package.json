@@ -11,7 +11,10 @@
     "lint": "expo lint",
     "test": "jest --watchAll=false",
     "lint:guardrails": "node scripts/check-guardrails.js",
-    "check": "expo install --check && tsc --noEmit && npm run lint:guardrails && npm test -- --ci"
+    "check": "expo install --check && tsc --noEmit && npm run lint:guardrails && npm test -- --ci",
+    "verify:state": "git --no-pager log --oneline -2 && git --no-pager status && wc -l BUILD-TODO.md && grep -n 'Current step, Track A' BUILD-TODO.md",
+    "verify": "npm run verify:state && npm run check"
+
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
