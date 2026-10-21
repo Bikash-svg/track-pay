@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DialogProvider } from '../src/ui/DialogProvider';
 import { ThemeProvider } from '../src/ui/useTheme';
 import { SplashGate } from '../src/ui/SplashGate';
+import { PaymentsProvider } from '../src/data/payments';
 import '../src/notifications/spike';
 
 // SafeAreaProvider is belt-and-braces alongside expo-router's internal provider
@@ -19,20 +20,22 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <DialogProvider>
-          <SplashGate>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen
-                name="pending"
-                options={{ headerShown: true, title: 'Needs confirming' }}
-              />
-              <Stack.Screen
-                name="scanner"
-                options={{ headerShown: true, title: 'Scan a UPI QR' }}
-              />
-            </Stack>
-          </SplashGate>
-        </DialogProvider>
+        <PaymentsProvider>
+          <DialogProvider>
+            <SplashGate>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen
+                  name="pending"
+                  options={{ headerShown: true, title: 'Needs confirming' }}
+                />
+                <Stack.Screen
+                  name="scanner"
+                  options={{ headerShown: true, title: 'Scan a UPI QR' }}
+                />
+              </Stack>
+            </SplashGate>
+          </DialogProvider>
+        </PaymentsProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

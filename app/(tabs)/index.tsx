@@ -13,6 +13,8 @@ import { copy } from '../../src/ui/copy';
 import { computeMonthStats } from '../../src/domain/monthStats';
 import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
+import { usePayments } from '../../src/data/payments';
+import { PayToFriendDialog } from '../../src/ui/PayToFriendDialog';
 import { View } from 'react-native';
 
 const DEV_PRESETS = [
@@ -44,9 +46,25 @@ export default function HomeScreen() {
   const [limit, setLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
+  const { payments, addFriendPayment } = usePayments();
+  const { open, close } = useDialog();
   const now = new Date();
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
+
+  const handleSaveFriend = (input: {
+    amountPaise: number;
+    payeeName: string;
+    preferredUpiPackage: string;
+  }) => {
+    addFriendPayment(input);
+    setPendingCount(pendingCount + 1);
+    close();
+    if (__DEV__) console.warn('[4.1 dev] Saved friend payment pending');
+  };
+
+  const recentPayments = payments.slice(0, 4);
+  const showRealPayments = recentPayments.length > 0;
 
   return (
     <Screen padTop={false}>
@@ -60,7 +78,21 @@ export default function HomeScreen() {
           </Button>
         </View>
         <View style={{ flex: 1 }}>
-          <Button variant="primary" onPress={() => router.push('/pay-to-friend')} accessibilityLabel={copy.payToFriend}>
+          <Button
+            variant="primary"
+            onPress={() =>
+              open({
+                title: copy.payToFriend,
+                children: (
+       <PayToFriendDialog
+         onSave={handleSaveFriend}
+         onCancel={close}
+       />
+                ),
+              })
+            }
+            accessibilityLabel={copy.payToFriend}
+          >
             {copy.payToFriend}
           </Button>
         </View>
@@ -86,7 +118,35 @@ export default function HomeScreen() {
 
       {/* Recent Payments (DESIGN.md §1 item 5) — after the Banner, before DevSection */}
       <Text variant="secondary">{copy.recentPayments}</Text>
-      {devPaymentCount === 0 ? (
+      {showRealPayments ? (
+        recentPayments.map((p) => (
+          <PayRow
+            key={p.id}
+            avatarLetter={(p.payeeName || 'F')[0].toUpperCase()}
+            name={p.label ?? p.payeeName}
+            amountPaise={p.amountPaise}
+            category={p.category}
+            status={
+              p.status === 'success'
+                ? 'Done'
+                : p.status === 'failed'
+                  ? 'Failed'
+                  : 'Pending'
+            }
+            date={dateLabel(new Date(p.createdAt), now)}
+            accessibilityLabel={`${p.payeeName}, ${p.category}`}
+            onPress={
+              // Done-when "tapping a row opens Edit" is Step 4.8's; dev-gated
+              // no-op today, no onPress in a release build.
+              __DEV__
+                ? () => {
+                    console.warn('[3.5 dev] Row tap — Edit ships in Phase 4.8');
+                  }
+                : undefined
+            }
+          />
+        ))
+      ) : devPaymentCount === 0 ? (
         <Text variant="muted">{copy.noPayments}</Text>
       ) : (
         DEV_SAMPLE_PAYMENTS.slice(0, Math.min(devPaymentCount, 4)).map((p, i) => {

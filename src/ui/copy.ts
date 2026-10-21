@@ -33,6 +33,14 @@ export const copy = {
   save: 'Save',
   deletePayment: 'Delete payment',
   enterAmountGreaterThanZero: 'Enter an amount greater than ₹0',
+  useAtMostTwoDecimals: 'Use at most 2 decimal places',
+  thatAmountIsTooLarge: 'That amount is too large',
+  amount: 'Amount',
+  payWith: 'Pay with',
+  yourUpiAppOpensNext:
+    'Your UPI app opens next. This payment is saved as pending.',
+  noUpiAppWasFound:
+    'No UPI app was found on this phone. Install a UPI app such as GPay or PhonePe, then try again.',
   toWhom: 'To whom',
   whatWasThisFor: 'What was this for?',
   exportData: 'Export data',
