@@ -10,6 +10,9 @@
 // (listUpiApps), with a __DEV__ seam so the no-app state is exercisable on a
 // phone that has UPI apps installed. isNoApp covers both "no native module"
 // (kind: not-found) and "module present, nothing installed" (empty list).
+//
+// 4.1 known gap viii (auto-focus on dialog open) fixed in 4.3: setTimeout on
+// mount focuses the amount field after Modal + KeyboardAvoidingView settle.
 
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -35,7 +38,6 @@ interface PayToFriendDialogProps {
     preferredUpiPackage: string;
   }) => void;
   readonly onCancel: () => void;
-  // readonly onShow?: () => void;
 }
 
 export function PayToFriendDialog({ onSave, onCancel }: PayToFriendDialogProps) {
@@ -48,6 +50,8 @@ export function PayToFriendDialog({ onSave, onCancel }: PayToFriendDialogProps) 
   // and this field's Done button dismisses the keyboard. Held as a ref
   // rather than recreated each render so focus() survives re-renders.
   const payeeRef = useRef<TextInput>(null);
+  // 4.3 auto-focus fix (4.1 known gap viii): focus amount field on mount
+  const amountRef = useRef<TextInput>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,18 +77,13 @@ return () => {
      };
    }, []);
 
-   // 4.1 auto-focus (owner-requested scope exception): when the dialog opens
-   // the amount field takes focus so the user can start typing without
-   // from the focus-advance wiring.
-  //  const amountRef = useRef<TextInput>(null);
-  //  useEffect(() => {
-  //    const handle = InteractionManager.runAfterInteractions(() => {
-  //      amountRef.current?.focus();
-  //    });
-  //    return () => handle.cancel();
-  //  }, []);
+  // 4.3 auto-focus fix (4.1 known gap viii): setTimeout waits for Modal + KeyboardAvoidingView to settle
+  useEffect(() => {
+    const t = setTimeout(() => amountRef.current?.focus(), 150);
+    return () => clearTimeout(t);
+  }, []);
 
-   const parsed = amount.length > 0 ? parseAmount(amount) : null;
+  const parsed = amount.length > 0 ? parseAmount(amount) : null;
   const amountError =
     parsed && 'errorKey' in parsed ? copy[parsed.errorKey] : undefined;
 
@@ -101,8 +100,8 @@ return () => {
 
   return (
     <View style={{ gap: 12 }}>
-<AmountField
-        // ref={amountRef}
+      <AmountField
+        ref={amountRef}
         value={amount}
         onChangeText={setAmount}
         error={amountError}

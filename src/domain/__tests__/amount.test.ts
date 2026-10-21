@@ -1,4 +1,4 @@
-import { parseAmount } from '../amount';
+import { parseAmount, formatPaise } from '../amount';
 
 describe('parseAmount', () => {
   it("'120' -> 12000 paise", () => {
@@ -50,5 +50,19 @@ describe('parseAmount', () => {
         errorKey: 'thatAmountIsTooLarge',
       });
   });
-
 });
+
+describe('formatPaise', () => {
+  it('10000 -> "100.00" (plain decimal, no currency symbol)', () => {
+    expect(formatPaise(10000)).toBe('100.00');
+  });
+
+  it('0 -> "0.00"', () => {
+    expect(formatPaise(0)).toBe('0.00');
+  });
+
+  it('12050 -> "120.50"', () => {
+    expect(formatPaise(12050)).toBe('120.50');
+  });
+});
+

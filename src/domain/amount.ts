@@ -72,11 +72,13 @@ export function parseAmount(input: string): AmountParseResult {
   return { paise };
 }
 
-// Display helper: paise -> "₹3,630". Lives here so the dialog and any future
-// surface share one formatter; src/ui/Money.tsx is the rendering component.
+// Input helper: paise -> "3630.00" (plain decimal for pre-filling text fields).
+// NOT a display formatter — Money.tsx owns the ₹ currency formatting. Lives
+// here so ConfirmPaymentDialog can pre-fill the amount field with a value
+// that parseAmount can re-parse on the round-trip.
 export function formatPaise(paise: number): string {
-  const rupees = Math.round(paise / 100);
-  return `₹${rupees.toLocaleString('en-IN')}`;
+  const rupees = (paise / 100).toFixed(2);
+  return rupees;
 }
 
 export function amountErrorString(errorKey: AmountError): string {

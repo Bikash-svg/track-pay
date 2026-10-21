@@ -67,6 +67,27 @@ function validateAmount(am: string): { ok: boolean; paise: number | null; reason
   return { ok: true, paise };
 }
 
+// 4.3 reverse of parseUpi: build a upi://pay link from a parsed result with optional amount/note overrides. URL-encodes pn and tn. Omits am when amount is null or 0 (U2 flow — user enters amount in Confirm dialog, but buildUpiLink can also be called with the edited amount). Omits tn when empty. cu is always INR. Round-trip test: parseUpi(buildUpiLink(parseUpi(x))) should equal parseUpi(x) when overrides are undefined.
+
+export function buildUpiLink(
+  result: UpiParseOk,
+  amountPaiseOverride?: number,
+  noteOverride?: string,
+): string {
+  const params: string[] = [];
+  params.push(`pa=${encodeURIComponent(result.payeeVpa)}`);
+  if (result.payeeNameFull) params.push(`pn=${encodeURIComponent(result.payeeNameFull)}`);
+  const amountPaise = amountPaiseOverride ?? result.amountPaise;
+  if (amountPaise !== null && amountPaise > 0) {
+    const rupees = (amountPaise / 100).toFixed(2);
+    params.push(`am=${rupees}`);
+  }
+  params.push('cu=INR');
+  const note = noteOverride ?? result.noteFull;
+  if (note) params.push(`tn=${encodeURIComponent(note)}`);
+  return `upi://pay?${params.join('&')}`;
+}
+
 export function parseUpi(input: string): UpiParseResult {
   // U8: must start with 'upi://pay' (strict prefix)
   const prefix = 'upi://pay';

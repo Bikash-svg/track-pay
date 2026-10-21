@@ -62,4 +62,8 @@ export const copy = {
   firstName: 'First name',
   surname: 'Surname',
   continueLabel: 'Continue',
+  // 4.3 Confirm payment dialog
+  confirmPayment: 'Confirm payment',
+  amountYouCanChange: 'Amount (you can change it)',
+  makePayment: 'Make payment',
 } as const;

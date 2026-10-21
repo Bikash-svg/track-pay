@@ -1,4 +1,4 @@
-import { parseUpi } from '../upiParse';
+import { parseUpi, buildUpiLink } from '../upiParse';
 
 describe('parseUpi (EVALS U1-U9)', () => {
   // U1: full URL
@@ -106,5 +106,76 @@ describe('parseUpi (EVALS U1-U9)', () => {
     const veryLongName = 'A'.repeat(250);
     const result = parseUpi(`upi://pay?pa=shop@bank&pn=${encodeURIComponent(veryLongName)}`);
     expect(result).toEqual({ kind: 'error', reason: 'too-long-name' });
+  });
+});
+
+describe('buildUpiLink (4.3 reverse of parseUpi)', () => {
+  // Round-trip: parseUpi(buildUpiLink(parseUpi(x))) should equal parseUpi(x) when overrides are undefined
+  test('round-trip: buildUpiLink then parseUpi preserves all fields', () => {
+    const input = 'upi://pay?pa=shop@bank&pn=Cafe%20Mocha&am=120.00&cu=INR&tn=Lunch';
+    const parsed = parseUpi(input);
+    expect(parsed.kind).toBe('ok');
+    if (parsed.kind === 'ok') {
+      const link = buildUpiLink(parsed);
+      const reparsed = parseUpi(link);
+      expect(reparsed.kind).toBe('ok');
+      if (reparsed.kind === 'ok') {
+        expect(reparsed.payeeName).toBe(parsed.payeeName);
+        expect(reparsed.payeeNameFull).toBe(parsed.payeeNameFull);
+        expect(reparsed.payeeVpa).toBe(parsed.payeeVpa);
+        expect(reparsed.amountPaise).toBe(parsed.amountPaise);
+        expect(reparsed.note).toBe(parsed.note);
+        expect(reparsed.noteFull).toBe(parsed.noteFull);
+      }
+    }
+  });
+
+  // Override amount: buildUpiLink(parsed, 5000) → parses back with amountPaise 5000
+  test('amountPaiseOverride: overrides the amount in the generated link', () => {
+    const input = 'upi://pay?pa=shop@bank&pn=Cafe%20Mocha&am=120.00&cu=INR&tn=Lunch';
+    const parsed = parseUpi(input);
+    expect(parsed.kind).toBe('ok');
+    if (parsed.kind === 'ok') {
+      const link = buildUpiLink(parsed, 5000); // ₹50.00
+      const reparsed = parseUpi(link);
+      expect(reparsed.kind).toBe('ok');
+      if (reparsed.kind === 'ok') {
+        expect(reparsed.amountPaise).toBe(5000);
+        expect(reparsed.payeeVpa).toBe(parsed.payeeVpa);
+        expect(reparsed.noteFull).toBe(parsed.noteFull);
+      }
+    }
+  });
+
+  // Override note: buildUpiLink(parsed, undefined, 'Coffee') → parses back with noteFull 'Coffee'
+  test('noteOverride: overrides the note in the generated link', () => {
+    const input = 'upi://pay?pa=shop@bank&pn=Cafe%20Mocha&am=120.00&cu=INR&tn=Lunch';
+    const parsed = parseUpi(input);
+    expect(parsed.kind).toBe('ok');
+    if (parsed.kind === 'ok') {
+      const link = buildUpiLink(parsed, undefined, 'Coffee');
+      const reparsed = parseUpi(link);
+      expect(reparsed.kind).toBe('ok');
+      if (reparsed.kind === 'ok') {
+        expect(reparsed.noteFull).toBe('Coffee');
+        expect(reparsed.amountPaise).toBe(parsed.amountPaise);
+        expect(reparsed.payeeVpa).toBe(parsed.payeeVpa);
+      }
+    }
+  });
+
+  // No amount: buildUpiLink(parseUpi('upi://pay?pa=x@y&pn=Shop').ok) → no am= in output
+  test('no amount: omits am parameter when amountPaise is null', () => {
+    const input = 'upi://pay?pa=shop@bank&pn=Shop';
+    const parsed = parseUpi(input);
+    expect(parsed.kind).toBe('ok');
+    if (parsed.kind === 'ok') {
+      const link = buildUpiLink(parsed);
+      expect(link).not.toContain('am=');
+      // Should still have pa, pn, cu
+      expect(link).toContain('pa=shop%40bank');
+      expect(link).toContain('pn=Shop');
+      expect(link).toContain('cu=INR');
+    }
   });
 });

@@ -11,14 +11,17 @@ import { useDialog } from '../src/ui/DialogProvider';
 import { useTheme } from '../src/ui/useTheme';
 import { copy } from '../src/ui/copy';
 import { parseUpi, type UpiParseResult } from '../src/domain/upiParse';
+import { buildUpiLink } from '../src/domain/upiParse';
 import { PayToFriendDialog } from '../src/ui/PayToFriendDialog';
+import { ConfirmPaymentDialog } from '../src/ui/ConfirmPaymentDialog';
 import { usePayments } from '../src/data/payments';
+import { openUpi } from '../src/native/upiLauncher';
 
 export default function ScannerScreen() {
   const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const { open, close } = useDialog();
-  const { addFriendPayment } = usePayments();
+  const { addFriendPayment, addQrPayment } = usePayments();
   const [permission, requestPermission] = useCameraPermissions();
   const [torchOn, setTorchOn] = useState(false);
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null);
@@ -32,7 +35,45 @@ export default function ScannerScreen() {
       invalidTimer.current = setTimeout(() => setInvalidMsg(null), 3000);
       return;
     }
-    if (__DEV__) console.warn('[scanner] parsed ok');
+    // Success — open Confirm payment dialog
+    open({
+      title: copy.confirmPayment,
+      children: (
+        <ConfirmPaymentDialog
+          result={result}
+          onCancel={close}
+          onConfirm={(input) => handleConfirm(result, input)}
+        />
+      ),
+    });
+  };
+
+  const handleConfirm = async (parsedResult: UpiParseResult, input: { amountPaise: number; label: string | null }) => {
+    if (parsedResult.kind !== 'ok') return;
+
+    const link = buildUpiLink(parsedResult, input.amountPaise, input.label ?? undefined);
+
+    // Save pending BEFORE launching UPI — P6 depends on the pending row existing if process is killed
+    await addQrPayment({
+      amountPaise: input.amountPaise,
+      payeeName: parsedResult.payeeNameFull,
+      payeeVpa: parsedResult.payeeVpa,
+      label: input.label,
+    });
+
+    // Fire-and-forget UPI launch — no packageName → OS chooser
+    void openUpi(link).catch((err) => {
+      if (__DEV__) console.warn('[scanner] openUpi failed:', err?.message ?? String(err));
+      // Minimal 4.3 fallback; 4.4 upgrades to full exception dialogs
+      open({
+        title: "Couldn't open UPI app",
+        subtitle: 'Nothing was saved. Try again, or choose another UPI app.',
+        secondaryAction: <Button variant="text" onPress={close}>Close</Button>,
+      });
+    });
+
+    // Close Confirm dialog, pop scanner
+    close();
     router.back();
   };
 
@@ -40,8 +81,8 @@ export default function ScannerScreen() {
     handleScan(parseUpi(data));
   };
 
-  const handleSaveFriend = (input: { amountPaise: number; payeeName: string; preferredUpiPackage: string }) => {
-    addFriendPayment({
+  const handleSaveFriend = async (input: { amountPaise: number; payeeName: string; preferredUpiPackage: string }) => {
+    await addFriendPayment({
       amountPaise: input.amountPaise,
       payeeName: input.payeeName,
       preferredUpiPackage: input.preferredUpiPackage,
