@@ -30,6 +30,20 @@ export const copy = {
   nothingToConfirm: 'Nothing to confirm',
   allConfirmed: 'All your payments are confirmed.',
   cancel: 'Cancel',
+  // 4.2 QR scanner + permission dialogs (COPY.md QR scanner + 2. Dialogs)
+  scanUpiQR: 'Scan a UPI QR',
+  pointCamera: 'Point the camera at a UPI QR code',
+  enterDetails: 'Enter details instead',
+  notUpiQR: 'This is not a UPI QR code',
+  allowCamera: 'Allow camera to scan QR codes',
+  cameraIsOnlyUsedToReadUpiQr:
+    'The camera is only used to read UPI QR codes. Nothing is saved or sent.',
+  cameraOff: 'Camera is off',
+  turnCameraOnInSettings:
+    'Turn it on in Android settings to scan QR codes.',
+  openSettings: 'Open settings',
+  notNow: 'Not now',
+  allow: 'Allow',
   save: 'Save',
   deletePayment: 'Delete payment',
   enterAmountGreaterThanZero: 'Enter an amount greater than ₹0',

@@ -10,7 +10,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bkas.trackpay"
     },
     "android": {
       "package": "com.bkas.trackpay",
@@ -21,7 +22,11 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -41,7 +46,13 @@
           }
         }
       ],
-      "react-native-notify-kit"
+      "react-native-notify-kit",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Track Pay uses the camera to scan UPI QR codes. Nothing is saved or sent."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
