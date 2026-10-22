@@ -144,9 +144,11 @@ This plan builds a **working version of the app with a plain look**. Every featu
 
 ---
 
-## Phase 4: Payments
+## Phase 4-A: Payments (payment launcher model — SUPERSEDED)
 
-Spec: `DESIGN.md` sections on dialogs, `COPY.md`, `EVALS.md` P1 to P12.
+> **Pivot note (2026-10-21).** Track Pay is repositioned from a payment launcher to a private, offline UPI tracker. GPay and PhonePe decline pre-filled `upi://pay` links from non-merchant apps — device-tested 2026-10-21 with personal (`@bank`) and merchant (`@okaxis`, `@ybl`) VPAs, both declined; consistent with Step 0.4's findings and `ARCHITECTURE.md` §13. Navi accepts. Steps 4.1–4.3 are complete and their code is retained but unreachable from Home after the pivot. Steps 4.4–4.9 are superseded by Phase 4-B — the pending-payment flows they assumed are no longer created from UI, and the Home pivot removes the entry points. See `Phase 4-B: OCR tracker model` for the active plan. Code files from the superseded steps (`scanner.tsx`, `ConfirmPaymentDialog.tsx`, `PayToFriendDialog.tsx`, exception dialogs) are retained with a header comment "Not reachable from UI post-pivot 2026-10-21. Retained for future re-enable."
+
+Spec: `DESIGN.md` sections on dialogs, `COPY.md`, `EVALS.md` P1 to P12. Steps 4.1–4.3 complete; 4.4–4.9 superseded (see pivot note above).
 
 #### Step 4.1: Pay to a friend
 - **Build:** amount, to whom (empty saves as "Friend"), UPI app list; validation from `DESIGN.md` 13.5; a no-UPI-app state.
@@ -183,6 +185,54 @@ Spec: `DESIGN.md` sections on dialogs, `COPY.md`, `EVALS.md` P1 to P12.
 #### Step 4.9: Add a payment already made
 - **Build:** amount, name, category, date stepper (never past today), Done or Failed.
 - **Done when:** the payment lands in the right month and totals follow the rules.
+
+## Phase 4-B: OCR tracker model (active)
+
+> **Pivot scope (2026-10-21).** Track Pay is a private, offline UPI tracker. The user pays in their UPI app (GPay / PhonePe / Paytm / Navi / any), then either (a) shares the success screenshot to Track Pay, which OCRs it on-device and pre-fills a receipt form, or (b) adds the payment manually. Track Pay logs, categorizes, and analyzes; it does not initiate payments. This replaces Phase 4-A's payment-launcher model, which was blocked by GPay/PhonePe pre-fill declines.
+
+> **Guardrails decision (2026-10-22 — Path B chosen).** ML Kit's SDK sends diagnostic telemetry to Google (device model, per-install ID, timing, error metrics). Never image data, OCR text, payee names, amounts, or payment details. **Path B was chosen on 2026-10-22** (owner decision; recorded in `BUILD-TODO.md` Decisions + OQ 14): `GUARDRAILS.md` §2.2 ("no network use") stays literally true; a custom Expo config plugin strips `INTERNET` from the manifest after ML Kit is added; the bundled OCR model (`ocrUseBundled: true`) works on-device; telemetry fails silently. Path A (amend GUARDRAILS §2.2 + AI-RULES §10.4 with Settings → About disclosure) was rejected — the "no network" positioning is worth more than ~2h of saved engineering. **4-B.1 is no longer blocked** — proceed with Path B implementation. Re-verify notify-kit R6/R7/R10 after INTERNET is stripped (see `BUILD-TODO.md` OQ 12a).
+
+#### Step 4-B.1: ML Kit share + OCR spike (throwaway)
+
+- **Build:** A throwaway route `app/share-receipt.tsx` that receives a shared image via `useShareIntentContext` (from `expo-share-intent`), calls `MlkitOcr.recognizeText()` on the image URI, and displays the raw OCR text on screen. `app/+native-intent.ts` redirects share intents to `/share-receipt` (resolves the expo-router ↔ expo-share-intent linking conflict on Android). No parsing, no saving, no Home changes. Both files are throwaway — replaced by 4-B.5 if the spike succeeds, or deleted if it fails. Requires native rebuild.
+> **State as of 2026-10-22:** neither `app/+native-intent.ts` nor `app/share-receipt.tsx` exists yet — both must be **created** in this step (`ls` returns "No such file or directory"). See `BUILD-TODO.md` 4-B.1 row and the 2026-10-22 Correction log entry.
+- **Done when:** sharing a GPay success screenshot to Track Pay opens `/share-receipt` and the raw OCR text visibly contains the amount, payee, and UPI reference shown on the receipt. Same for PhonePe. Both device-tested. If raw text is missing, empty, or unrecognisable, the OCR stack is re-evaluated before 4-B.2. **Additionally for Path B:** after `npx expo prebuild --clean`, `grep -i INTERNET android/app/src/main/AndroidManifest.xml` returns nothing (INTERNET stripped); and in airplane mode, sharing a GPay screenshot still produces raw OCR text on screen (proves on-device OCR runs without network).
+
+#### Step 4-B.2: Receipt parser (domain)
+
+- **Build:** A pure `src/domain/receiptParse.ts` — `parseReceipt(ocrText: string, source: 'gpay' | 'phonepe' | 'paytm' | 'unknown'): ParsedReceipt | null`. `ParsedReceipt = { amountPaise: number; payeeName: string; date: Date; upiRef: string | null }`. Includes OCR-error corrections for the known failure modes documented in the WeSpend write-up and similar published findings (`O` → `0`, `₹` → `7` at start, space-after-decimal → `.`). Tests first with real captured samples for each app layout. No native imports, no logs of payee names or amounts (`GUARDRAILS.md` §1.4), no storage, no `Date.now()`.
+- **Done when:** unit tests cover GPay, PhonePe, and Paytm receipt variants; correctly extract amount, payee, and date across common formats; gracefully return `null` for unparseable text (empty share, screenshot of unrelated screen, corrupted OCR).
+
+#### Step 4-B.3: Add previous payment receipt form
+
+- **Build:** `src/ui/AddReceiptForm.tsx` — the reusable form used by both manual entry (from Home) and OCR confirmation (from 4-B.5). Fields: amount (via `AmountField`, pre-filled if OCR provided a value), payee name (via `Field`, pre-filled if OCR provided a value), category (Chip row: Food / Shopping / Bills / Transport / Other), date (stepper, never future), status (Done / Failed). Adds a new `addReceiptPayment` function in `src/data/payments.tsx`: `source: 'receipt'`, `payeeVpa: string | null` (receipts may not expose VPA), persists via the existing AsyncStorage store. Renames the `addPaymentAlreadyMade` copy key to `addPreviousPaymentReceipt` with value `'Add previous payment receipt'`; adds `addPreviousPaymentReceiptSubtitle: 'For a payment you made in another UPI app'`. Testable in isolation via a `__DEV__` button in DevSection; Home integration is 4-B.4.
+- **Done when:** manual entry saves a payment; the new payment appears in Recent Payments with `source: 'receipt'`; validation matches DESIGN.md §5 rules (amount > 0, ≤ 2 decimals, ≤ ₹99,99,999.99, payee ≤ 40 chars); device-tested in both themes; form works with pre-filled values (simulating what 4-B.5 will pass in).
+
+#### Step 4-B.4: Home pivot cleanup
+
+- **Build:** Restructure `app/(tabs)/index.tsx` for the tracker model. Element inventory after this step (top to bottom):
+    1. **SpendCard** — kept. Reworked to read `spent` from `usePayments().payments.filter(p => p.status !== 'failed').reduce((s, p) => s + p.amountPaise, 0)` instead of the `__DEV__` preset. When `spent === 0`, empty state shows "Spend on {Month} / ₹0 / No payments yet". Limit stays `null` for now (7.3 wires it). Progress bar hidden when `limit === null` (existing SpendCard behaviour).
+    2. **"Add previous payment receipt" button** — renamed from "Add a payment already made". Full-width, secondary variant. `onPress` opens `AddReceiptForm` via `useDialog().open({ title: copy.addPreviousPaymentReceipt, children: <AddReceiptForm onSave={handleSave} onCancel={close} /> })`. Save writes via `addReceiptPayment`, closes dialog, stays on Home (payment appears in Recent Payments below).
+    3. **Recent Payments** — kept, simplified. Title "Recent Payments" + "See all → History" link. Up to **4** newest payments. Each row: avatar letter + payee/note + amount + date only — **no category, no status tag** (both live in History per Step 6.x). `PayRow` is called with `category={undefined}` and `status` hidden via a new `hideStatus?: boolean` prop (additive to `PayRow.tsx`). Empty state: `copy.noPayments` (existing key: "No payments yet. Scan a QR or add one.") — reword to "No payments yet. Add a previous payment to get started." via a new key `noPaymentsTrackerModel`, keep the old one for potential History reuse.
+    4. **DevSection** — kept, dev-only, unchanged (spent/limit presets remain for testing SpendCard; pending count presets remain for TopBar bell testing; theme buttons + dialog trigger unchanged).
+    **Removed entirely from Home's JSX:**
+    - Pay button (was disabled, no purpose)
+    - Quick actions row (Scan QR tile, Pay to a friend tile)
+    - Pending banner (no pending state from Home in the tracker model; pendingCount still feeds the TopBar bell via `usePendingCount()` — the number now derives from real payments: `usePayments().payments.filter(p => p.status === 'pending').length` in 4-B.5's follow-up; for 4-B.4 the dev-preset `pendingCount` remains for TopBar testing)
+    **Also in this step:** add the header comment `"Not reachable from UI post-pivot 2026-10-21. Retained for future re-enable."` to `app/scanner.tsx`, `src/ui/PayToFriendDialog.tsx`, `src/ui/ConfirmPaymentDialog.tsx`. Do **not** delete the files.
+- **Done when:** Home shows exactly SpendCard + Add previous payment receipt button + Recent Payments (simplified) + DevSection; tapping Add opens `AddReceiptForm` via the dialog, saving a payment appears in Recent Payments immediately; SpendCard shows the sum of Done + Pending payments from the store (verified by saving a test payment); device-tested on both themes; no visual regressions to TopBar / TabBar / safe area / scrolling; `scanner.tsx`, `PayToFriendDialog.tsx`, `ConfirmPaymentDialog.tsx` still compile (unused but present); all existing tests still pass; no new tests required for the removal-only changes.
+
+#### Step 4-B.5: Share receipt OCR route (headline)
+
+- **Build:** Replaces the throwaway `app/share-receipt.tsx` from 4-B.1 with the real implementation — receives a shared image via `useShareIntentContext`, runs `MlkitOcr.recognizeText()`, calls `parseReceipt()`, opens `AddReceiptForm` (4-B.3) pre-filled with the parsed amount/payee/date/upiRef. User reviews and edits, taps Save, `addReceiptPayment` writes to AsyncStorage, route closes back to Home (or `router.replace('/')`). `app/+native-intent.ts` unchanged. No new dependency (ML Kit was installed in 4-B.1). The `__DEV__` injector pattern from 4.2 continues here for testing without a real receipt: a dev button "Paste OCR text" on the share-receipt screen lets you simulate what OCR would return. Guardrails decision (Path A vs B) is enforced: if Path B, no network traffic observed; if Path A, Settings → About shows the ML Kit disclosure paragraph. Also wire the real pending count: change `usePendingCount()` consumers (TopBar bell) to derive from `usePayments().payments.filter(p => p.status === 'pending').length` — this closes the deferred "count matches the database" gap from 3.6 and 4.3.
+- **Done when:** sharing a GPay success screenshot → Add form pre-fills amount/payee/date → user confirms → payment appears in Recent Payments with source `'receipt'`. Same for PhonePe. Both device-tested. If Path B: `adb logcat` shows no network calls during OCR. If Path A: Settings → About shows ML Kit disclosure. TopBar bell shows the count of pending payments from the store (verified by saving a payment with status Pending). New EVALS cases **D10, D11** (text for §12 approval in this step's orientation):
+    - D10: "Share a GPay success screen to Track Pay → Add previous payment receipt form opens pre-filled with amount, payee, and date"
+    - D11: "Same for PhonePe; share sheet offers Track Pay for image mimeType; tapping it opens the form rather than the app home screen"
+
+#### Step 4-B.6: Edit and delete
+
+- **Build:** (unchanged from old 4.8) Edit (amount, to whom, what for, category, Done / Failed / Pending); Delete asks first and names the payment; undo message after delete. Works on any payment regardless of source (`'friend'`, `'qr'`, `'receipt'`). Reachable from Recent Payments row tap on Home and History row tap.
+- **Done when:** S3 and S5 pass.
 
 ---
 
