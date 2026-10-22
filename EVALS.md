@@ -64,17 +64,19 @@ Minimum: one Android 13+ phone and one Android 14+ phone, ideally including one 
 
 | ID | Scenario | Pass when |
 |---|---|---|
-| P1 | Scan a shop QR, pay in a UPI app, return | Pending payment exists; confirm sheet appears with shop name pre-filled |
-| P2 | Same, answer Yes with a name | Status success, appears in History and totals |
-| P3 | Same, answer No | Status failed, not in totals |
-| P4 | Same, answer Decide later | Stays pending; reminder arrives within an hour |
-| P5 | Cancel inside the UPI app | Returning shows the confirm sheet; user can mark Failed |
-| P6 | Kill the app while in the UPI app, then return | Pending payment still exists and can be confirmed |
-| P7 | Pay to a friend, pick a UPI app | Pending saved, notification appears right away with Done, Failed, Edit |
+| P1 | Scan a shop QR, pay in a UPI app, return | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Pending payment exists; confirm sheet appears with shop name pre-filled |
+| P2 | Same, answer Yes with a name | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Status success, appears in History and totals |
+| P3 | Same, answer No | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Status failed, not in totals |
+| P4 | Same, answer Decide later | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Stays pending; reminder arrives within an hour |
+| P5 | Cancel inside the UPI app | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Returning shows the confirm sheet; user can mark Failed |
+| P6 | Kill the app while in the UPI app, then return | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Pending payment still exists and can be confirmed |
+| P7 | Pay to a friend, pick a UPI app | **(unreachable post-pivot 2026-10-21 — Pay-to-a-friend removed from Home)** Pending saved, notification appears right away with Done, Failed, Edit |
 | P8 | Edit amount from the notification | Edit sheet opens; saved change shows in History |
-| P9 | Only one UPI app installed, or none | Chooser still works or shows a clear message; no crash |
-| P10 | Camera permission denied | Clear message with a way to enter the amount manually |
+| P9 | Only one UPI app installed, or none | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Chooser still works or shows a clear message; no crash |
+| P10 | Camera permission denied | **(unreachable post-pivot 2026-10-21 — scanner flow removed from Home)** Clear message with a way to enter the amount manually |
 | P11 | Notification permission denied | Clear message; app still works; pending list is the fallback |
+| D10 | Share a GPay success screenshot to Track Pay | `/share-receipt` route opens; Add previous payment receipt form is pre-filled with amount, payee, and date |
+| D11 | Share a PhonePe success screenshot to Track Pay | Share sheet offers Track Pay for image mimeType; tapping it opens the pre-filled form, not Home |
 
 ## 7. Data safety (Unit and Device)
 
@@ -86,7 +88,7 @@ Minimum: one Android 13+ phone and one Android 14+ phone, ideally including one 
 | D4 | Importing the same file twice with merge does not create duplicates |
 | D5 | PDF statement total matches the Analytics total for the same month |
 | D6 | Migrations from every earlier schema version succeed with data intact |
-| D7 | Airplane mode: every feature works |
+| D7 | Airplane mode: every feature works. **Path B (2026-10-22):** after `npx expo prebuild --clean`, `grep -i INTERNET android/app/src/main/AndroidManifest.xml` returns nothing; ML Kit OCR on a shared receipt still works in airplane mode (proves fully on-device, no network) |
 
 ## 8. UI and accessibility (Device)
 
@@ -103,20 +105,20 @@ Minimum: one Android 13+ phone and one Android 14+ phone, ideally including one 
 
 - Cold start to Home under 2 seconds on the test phone.
 - History and Analytics stay smooth with 5,000 payments.
-- Confirm sheet opens within 300 ms of returning from the UPI app.
+- ~~Confirm sheet opens within 300 ms of returning from the UPI app.~~ *(unreachable post-pivot 2026-10-21 — no UPI chooser flow from Home)*
 
 ## 10. Retry after a failed payment (project plan 4.6)
 
 | ID | Check |
 |---|---|
-| P12a | "No, it failed" opens "Payment failed" with Try again, Edit details, Keep as failed |
-| P12b | Try again on a QR payment reopens Confirm payment with the same shop, amount and note; Make payment creates a **new** pending payment; the old one stays Failed and is not counted |
-| P12c | Try again on a friend payment reopens Pay to a friend with the same name and amount |
-| P12d | Retrying three times creates three new rows plus the original; History shows each attempt |
-| P12e | Edit payment with status Failed shows Try again; with Done or Pending it does not |
-| P12f | A UPI hint "failed" never marks the payment Failed by itself |
-| P12g | If the UPI app does not open, "Couldn't open {app}" shows and no pending payment is left behind |
-| R11 | Device: marking Failed from a notification updates it to "Payment failed" with Try again and Edit; Try again opens the retry flow |
+| P12a | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** "No, it failed" opens "Payment failed" with Try again, Edit details, Keep as failed |
+| P12b | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** Try again on a QR payment reopens Confirm payment with the same shop, amount and note; Make payment creates a **new** pending payment; the old one stays Failed and is not counted |
+| P12c | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** Try again on a friend payment reopens Pay to a friend with the same name and amount |
+| P12d | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** Retrying three times creates three new rows plus the original; History shows each attempt |
+| P12e | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** Edit payment with status Failed shows Try again; with Done or Pending it does not |
+| P12f | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** A UPI hint "failed" never marks the payment Failed by itself |
+| P12g | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** If the UPI app does not open, "Couldn't open {app}" shows and no pending payment is left behind |
+| R11 | **(unreachable post-pivot 2026-10-21 — retry-after-failure flow removed)** Device: marking Failed from a notification updates it to "Payment failed" with Try again and Edit; Try again opens the retry flow |
 
 ## 11. Splash, onboarding, profile (plan 2.x)
 
