@@ -20,30 +20,59 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 ## Top bar (all tab screens)
 
 - Track Pay
-- Notifications, {n} pending
 - Profile
 
 ## Home
 
+- Good morning, {First name}
+- {Month}
 - Spend on {Month}
 - Limit ₹15,000
-- ₹11,370 left · about ₹568 a day for 20 days
+- Left ₹11,370
+- Allowance a day ₹568
 - Over by ₹X
 - ₹X left
-- ₹330 a day on average
-- Scan QR
-- Pay to a friend
-- Pay
-- Add a payment already made
-- {n} payment needs confirming
-- {n} payments need confirming
-- Review
-- See all
-- No payments yet. Scan a QR or add one.
+- Based on payments recorded in Track Pay
+- Add from screenshot
+- Add manually
+- Pay in any UPI app, then share the success screenshot here.
+- This month at a glance
+- Daily pace ₹330 a day
+- Month-end estimate ₹10,230 (estimate)
+- Versus last month
+- Analytics
+- Recent payments
+- History
+- Not verified
+- No payments yet. Share a payment screenshot or add one by hand.
 - ₹60 · Food
 - Today
 - Oct 10
 - Oct 10, 2025
+
+## Receipt result
+
+- Payment added
+- To
+- Check these against your payment. They were read from your screenshot.
+- Looks right
+- Edit
+- Undo
+- This payment is already in Track Pay.
+- Done
+- Couldn't read this screenshot. Nothing was saved.
+- Enter manually
+- Close
+- This screenshot shows a payment that did not go through. Nothing was saved.
+
+## Batch result
+
+- Screenshots read
+- {n} added
+- {n} already added
+- {n} couldn't be read
+- Review
+- Done
 
 ## Analytics (title "Analytics", month picker "{Month} ▾")
 
@@ -58,8 +87,6 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Projected month end ₹10,230 (estimate)
 - Headroom ₹4,770
 - vs last month, same days: {+/-}{n}% ({amount})
-- {n} pending, ₹X
-- {n} failed
 - No spending this month
 - of ₹15,000
 - 12.5k
@@ -71,12 +98,12 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 
 - History
 - All ▾
+- Not verified
 - Search payee, note or category
 - {Month} {Year}
 - Spent ₹X
 - Export data
-- No payments yet
-- Scan a QR or add a payment you already made.
+- No payments yet.
 
 ## Settings
 
@@ -86,80 +113,32 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - +₹2,000
 - +₹5,000
 - −₹1,000
-- Quick-add a payment without opening the app
+- Limit alerts at 80% and 100% are always on while a limit is set.
+- Daily reminders
+- Reminder times
 - No reminders from 11 pm to 7 am
+- Monthly backup reminder
 - Show details on lock screen
-- Off: notifications only say a payment is pending
+- Off: notifications only say a payment was added
 - Battery settings
-- Refresh list
 - Save all payments as a backup file
 - Restore payments from a backup file
 - Pick a month and save it as a PDF
-- Track Pay keeps everything on this phone. It records payments you start or add. It does not detect payments made elsewhere.
-
-## Needs confirming (page with Back arrow)
-
-- All
-- Unconfirmed
-- Done
-- Failed
-- Edit
-- Name it
-- Nothing to confirm
-- All your payments are confirmed.
-
-## QR scanner (full screen)
-
-- Scan a UPI QR
-- Point the camera at a UPI QR code
-- Enter details instead
-- This is not a UPI QR code
+- Track Pay keeps everything on this phone. It records payments you share as screenshots or add by hand. It does not detect payments made elsewhere and it never starts a payment.
 
 ## 2. Dialogs (centred)
 
-- Did it go through?
+- Paid in another UPI app
 - Amount
 - To whom
-- Pay with
-- Your UPI app opens next. This payment is saved as pending.
-- Enter an amount greater than ₹0
-- No UPI app was found on this phone. Install a UPI app such as GPay or PhonePe, then try again.
-- Amount (you can change it)
 - What was this for?
+- Date
 - Cancel
-- Make payment
-- Couldn't open GPay
-- The payment was not started and nothing was saved. Try again, or choose another UPI app.
-- Try again
-- Choose another app
-- No UPI app found
-- Install a UPI app such as GPay or PhonePe, then try again. Nothing was saved.
-- Close
-- ₹120 to Cafe Mocha
-- Your UPI app said this payment went through. It may not be right, so please check and answer below.
-- failed
-- We will remind you every hour until you answer.
-- Yes, it went through
-- No, it failed
-- Decide later
-- Payment failed
-- It is saved as Failed and not counted in your totals. You can try again.
-- Paid to a friend
-- Your UPI app also said this payment failed.
-- Trying again starts a new payment. This one stays in History as Failed.
-- Edit details
-- Keep as failed
-- Done, Failed, Pending
-- Trying again starts a new payment. This one stays Failed.
+- Save
 - Save changes
 - Delete payment
 - ₹60 to Bikash Murmu will be removed from your history and totals. This cannot be undone.
 - Delete
-- Paid outside this app
-- To whom / what for
-- Date
-- Done, Failed
-- Save
 - {n} payments, Jan to Oct 2026
 - Merge with my data
 - Adds {n} new payments and skips duplicates.
@@ -169,51 +148,61 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Could not import
 - The file could not be read. Pick a backup that was exported from Track Pay.
 - Pick another file
+- Close
 - This file contains all your payments and is not encrypted. Anyone who gets it can read it. Keep it somewhere private.
 - Export
+- Backup file
+- Monthly PDF statement
+- Continue
 - Choose a month
-- Include failed payments
-- Shown but not counted in the total
 - Create PDF
+- How many times a day
 - Reminders wait until quiet hours end
 - Start
 - End
 - Pick the same time for both to turn quiet hours off.
 - Done
-- Get reminders for pending payments
-- One reminder an hour while a payment needs confirming, never at night. You can confirm it right from the notification.
+- Get reminders and payment receipts
+- Track Pay tells you when a screenshot was read, reminds you to log payments, and warns you near your limit. Never at night.
 - Not now
 - Allow
-- Allow camera to scan QR codes
-- The camera is only used to read UPI QR codes. Nothing is saved or sent.
-- Camera is off
-- Turn it on in Android settings to scan QR codes.
-- Open settings
-
-## Retry rules
-
-- No, it failed
-- Try again
-- Couldn't open {app}
 
 ## 3. Phone notifications
 
-- Payment to Bikash Murmu
-- ₹60 · Saved as pending
-- Name this payment
-- 3 payments need confirming
-- Bikash Murmu ₹60 · Tea stall ₹40 · 1 more
-- Name it
-- Payment failed
-- ₹60 to Bikash Murmu
-- Quick add
-- Log a payment without opening the app
-- Add payment
-- Payment pending
+- Payment added
+- ₹60 to Bikash Murmu · Food · Oct 10, 2:14 pm
+- Looks right
+- Edit
+- Undo
+- Couldn't read this screenshot
+- Nothing was saved.
+- Enter manually
+- Already added
+- ₹60 to Bikash Murmu is already in Track Pay.
+- {n} payments added
+- Tap to review them.
+- Review
+- Any payments to add?
+- Share your payment screenshots to keep your month complete.
+- Add screenshots
+- No payments
+- Snooze 1 hour
+- 80% of your limit used
+- ₹12,000 of ₹15,000 spent in October.
+- Monthly limit reached
+- You have spent ₹15,000 of ₹15,000 in October.
+- Back up your {Month} spending
+- Export last month's payments so you do not lose them.
+- Export now
+- Remind me tomorrow
+- Payment added from screenshot
+- Time to log your payments
+- Limit update
 - Unlock to see details
-- Unlock to confirm them
-- Payment confirmations
-- Hourly reminders
+- Receipt confirmations
+- Daily log reminders
+- Limit alerts
+- Backup reminders
 
 ## 4. States and rules
 
@@ -221,10 +210,7 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Mon D
 - Mon D, YYYY
 - October 2026
-- 1 payment needs confirming
-- 3 payments need confirming
-- Friend
-- Payment
+- Unknown
 
 ## 5. Validation messages (under the field)
 
@@ -241,10 +227,7 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Backup file is not valid. Nothing was changed.
 - Backup is from a newer version of the app.
 - Payment deleted
+- Payment added
+- Marked as verified
 - Backup saved
 - PDF ready
-- This is not a UPI QR code
-
-## 7. Open decisions (ask, do not invent)
-
-- Primary

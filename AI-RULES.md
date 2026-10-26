@@ -2,6 +2,10 @@
 
 You are an AI model building this app for one person. Follow these rules exactly. If a rule and a request conflict, say so and ask. These rules apply to every session.
 
+## 0. Scope lock (read the block at the top of `BUILD-TODO.md` every session)
+
+The owner set a strict scope lock on 2026-10-25. In short: do only the current step; edit only the files it names plus `BUILD-TODO.md`; edit no other `.md` file; never mark `[x]`; delete only what the step's delete list names; add no dependency, permission, route, file, copy or setting that the step does not list; never build anything that starts or scans for a payment; stop after the report. Anything not in the current step is out of scope, even if it looks helpful, small or obviously correct. Put it under "Found but not touched" in the report and ask.
+
 ## Working rules (strict, every step)
 
 - Run the step's "Done when" commands and show the real output, including `git status`.
@@ -12,6 +16,8 @@ You are an AI model building this app for one person. Follow these rules exactly
 - Do not raise questions already answered in the Decisions table in `BUILD-TODO.md`.
 - After each step, end with the section 8 report, then stop and wait for approval. Do not start the next step until the owner says so.
 - Do not touch the engines in the package.json
+- Do not edit any `.md` file except `BUILD-TODO.md`. Propose document changes as questions.
+- Do nothing outside the current step. No extras, no refactors, no renames, no clean-ups that the step does not list.
 
 ## 1. Read before you do anything (every session)
 
@@ -52,12 +58,21 @@ Read in this order: `AI-RULES.md` (this file), `BUILD-TODO.md`, `GUARDRAILS.md`,
 | D4 | Dark (Obsidian) is the default. Light (Alabaster) and Auto are required. |
 | D5 | Android only, React Native with Expo SDK 54. No Tailwind, no web view, no iOS work. |
 | D6 | In scope beyond the core: splash, onboarding (name, optional photo), top bar without a sync dot. |
-| D7 | **Never build:** SMS or notification reading, collect requests (Authorize, Decline), WhatsApp nudges, mandates, voice search, "UPI failover SLA" or routing claims, "live sync", biometric badge, accounts, servers, analytics. |
-| D8 | "Try again" creates a **new** payment. The failed one stays as history. |
-| D9 | UPI apps appear as text monograms, not brand logos. |
+| D7 | **Never build:** SMS or notification reading, collect requests (Authorize, Decline), WhatsApp nudges, mandates, voice search, "UPI failover SLA" or routing claims, "live sync", biometric badge, accounts, servers, analytics, **and (2026-10-25) anything that starts, launches or scans for a payment, background gallery scanning, cloud OCR, storing screenshots.** |
+| D8 | **RETIRED 2026-10-25.** There is no "Try again". Track Pay does not start payments. |
+| D9 | **RETIRED 2026-10-25.** The app does not list or open UPI apps. |
 | D10 | Money is integer paise. Estimates are labelled "estimate". |
-| D11 | Failed payments are not counted. Done and Pending are counted, pending marked. |
+| D11 | Failed payments are never counted. New payments are created as Done. No flow creates Pending or Failed payments (open question 22 covers old test rows). |
 | D12 | Plan A uses a plain look through the UI contract; plan B replaces it. |
+| D13 | Track Pay never starts, launches or scans for a payment: no UPI links, no QR scanning for payment, no UPI app chooser, no Pay button. Replaces Phase 4-A. |
+| D14 | Payments enter only by a shared screenshot, screenshot(s) picked from the gallery, or manual add. |
+| D15 | OCR is Google ML Kit text recognition with the **bundled** model, on the phone. The INTERNET permission is stripped (Path B). Screenshots are never stored; any cache copy is deleted after reading. |
+| D16 | A payment read from a screenshot is saved at once with `reviewed = false` and shown to the user with Looks right, Edit and Undo. Failed, Pending, unreadable and duplicate screenshots are refused with a message and nothing is saved. |
+| D17 | Notifications: receipt received; daily log reminders (4 a day by default, customisable); limit alerts (80% and 100%, once a month each, always on, only when a limit is set); monthly backup reminder. Library: react-native-notify-kit. |
+| D18 | Home structure is locked: greeting header, month card, quick access (Add from screenshot, Add manually), analytics glance, recent payments, tab bar. Values come from the tokens. |
+| D19 | Payments move from AsyncStorage to SQLite in Step 4-C.1, before analytics. |
+| D20 | The top-bar bell and the Needs-confirming page are removed. |
+| D21 | Scope lock: the AI does only the current step and edits no `.md` file except `BUILD-TODO.md`. |
 
 ## 5. Keeping `BUILD-TODO.md` up to date
 
@@ -124,10 +139,10 @@ Do not ask about things the documents already answer. One question at a time whe
 
 1. `src/domain` is pure TypeScript with no React or platform imports, and has tests. Tests come first.
 2. Only `src/data` touches storage. Every schema or settings change has a numbered migration and a test.
-3. A payment's status changes only because the user chose it. A UPI result is a hint.
-4. No network calls, analytics, crash reporters or remote config. No SMS, contacts or notification-listener access.
-5. Never log payee names, UPI IDs, amounts or notes.
-6. Notification and native code stays in `src/notifications`, `src/native` and `modules/upi-launcher`, with no business rules.
+3. A payment is created only from something the user shared or entered. The user can always verify, edit, undo or delete it. Nothing the app creates is hidden.
+4. No network calls, analytics, crash reporters or remote config. No SMS, contacts or notification-listener access. The INTERNET permission stays stripped.
+5. Never log payee names, UPI IDs, amounts, notes or OCR text.
+6. Notification and native code stays in `src/notifications` and `src/native`, with no business rules. There is no custom native module any more.
 7. Small, focused files. Match the surrounding style (`.prettierrc`). TypeScript strict stays on. No `any` to silence an error.
 
 ## 11. Dependencies and git
@@ -147,5 +162,5 @@ Do not ask about things the documents already answer. One question at a time whe
 
 - Say what you did not run, did not test, or are unsure about.
 - Never mark a device check passed unless it was run on a real phone.
-- Never claim reliability the app cannot have: it records payments the user starts or adds; it cannot see payments made elsewhere.
+- Never claim reliability the app cannot have: it records payments the user shares a screenshot of or adds by hand; it cannot see any other payment, and OCR can misread, which is why the user can always verify and edit.
 - If you make a mistake, say so, fix it and log it.

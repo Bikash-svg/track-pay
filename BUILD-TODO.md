@@ -1,8 +1,46 @@
 # Build To-Do
 
+> # READ THIS FIRST: SCOPE LOCK AND CLEANUP
+> Set by the owner on 2026-10-25. These rules override every habit, default and suggestion. If anything below conflicts with another file, this block wins, except `GUARDRAILS.md`, which still wins over everything.
+
+## What Track Pay is now
+
+A private, offline UPI expense tracker for Android. The user pays in **any** UPI app, then shares the success screenshot to Track Pay (or picks screenshots from the gallery, or adds a payment manually). Google ML Kit reads the screenshot **on the phone**, the payment is recorded, and the user can verify it. Track Pay **never starts, launches or scans for a payment**. GPay and PhonePe decline every pre-filled link from other apps, so that whole flow is dead.
+
+## Scope lock (strict, every session)
+
+1. **Do only the current step.** It is the first row in Track A that is not `[x]`. Do exactly its "Build" and "Done when" lines in `ARCHITECTURE-BUILD-PLAN.md`. Nothing before it, nothing after it, nothing extra.
+2. **Edit only the files the step names**, plus this file. If you need another file, stop and ask.
+3. **Do not edit any other `.md` document.** The documents were rewritten by the owner on 2026-10-25. If one looks wrong, say so in your report and ask.
+4. **Never mark a step `[x]`.** Mark it `[~]`, add evidence, report, and wait. Only the owner marks `[x]`.
+5. **Never build:** any way to start a payment (UPI links, `upi://pay`, QR scanning for payments, a UPI app chooser, a Pay button); SMS reading; reading other apps' notifications; scanning the gallery in the background; any network use; cloud OCR; accounts; analytics; storing screenshots. The full list is in `GUARDRAILS.md` section 11.
+6. **Do not add** a dependency, permission, config plugin, route, file, copy string, token or setting that the step does not list. Ask first, with two or three options and your recommended default.
+7. **Do not refactor, rename, reformat or "improve"** code outside the step. **Delete only what the step's delete list names.** If you find something else that looks obsolete, list it in your report under "Found but not touched". Do not touch it.
+8. **Do not reopen** anything in the Decisions table. **Do not answer** an open question yourself. Use a bracketed default only when the step says to; otherwise ask.
+9. **One step per turn.** After the report in the `AI-RULES.md` section 8 format, stop. Do not start the next step.
+10. **No private data anywhere:** logs, reports, tests and fixtures never contain real payee names, UPI IDs, amounts or OCR text. Use obviously fake samples.
+11. **Device checks:** never write "passed" for a check you did not run on a real phone. Say "not run" and why.
+12. **History is never deleted.** Corrections are new log lines.
+
+## Cleanup comes first
+
+**Step 4-B.0 "Retire the pay flow" runs before any other remaining step.** Its exact delete list is in `ARCHITECTURE-BUILD-PLAN.md`. It removes the old payment-launcher code (scanner, Pay to a friend, Confirm payment, UPI chooser module, UPI link parser, pending page) and the camera dependency. It changes nothing else.
+
+**Keep, do not touch in 4-B.0:** the theme and tokens, every UI primitive (`Screen`, `Text`, `Money`, `Button`, `Field`, `AmountField`, `Card`, `Chip`, `StatusTag`, `Toggle`, `Banner`, `PayRow`, `TabBar`, the dialog host, `Splash`, `SplashGate`, `SpendCard`, `TopBar`, `PendingCountProvider`), onboarding and launch routing, the settings store, `src/domain` (`amount`, `greeting`, `profile`, `monthStats`, `dateLabel`, `paymentState`), the payments store and its AsyncStorage persistence, `src/notifications/spike.ts` and the notification handler in `app/_layout.tsx` (needed again in Phase 8), and the tabs.
+
+## Order of authority
+
+`GUARDRAILS.md`, then `AI-RULES.md`, then this file, then `ARCHITECTURE-BUILD-PLAN.md`, then `ARCHITECTURE.md`, `DESIGN.md`, `COPY.md`, `EVALS.md`. Colours, fonts and sizes come only from `DESIGN-TOKENS.md` and `DESIGN-BUILD-PLAN.md`. A design mockup is a structure reference, never a source of colours.
+
+## Stop and ask
+
+Stop and ask, with options and a recommended default, when: the step is silent or two documents disagree; a step needs something not listed; a check fails and the fix would change a spec; something would touch `GUARDRAILS.md`, `EVALS.md`, the lock file or `app.json` permissions in a way the step does not describe; or you cannot verify something on a device.
+
+---
+
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:**  4-B.1 ML Kit share+OCR spike (throwaway)
+**Current step, Track A:**  4-B.0 Retire the pay flow (cleanup). 4-B.1 stays `[~]` and resumes right after it.
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -90,17 +128,24 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | 4.8 | Edit and delete | [-] | Renumbered as 4-B.6 in the new sub-phase. |
 | 4.9 | Add a payment already made | [-] | Renamed and renumbered as 4-B.3 "Add previous payment receipt". |
 
-#### Phase 4-B: OCR tracker model (active 2026-10-21)
+#### Phase 4-B: OCR tracker model (active 2026-10-21; re-planned 2026-10-25)
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
+| 4-B.0 | **Retire the pay flow (cleanup).** Runs first. | [ ] | Spec and exact delete list: `ARCHITECTURE-BUILD-PLAN.md` Step 4-B.0. Touch nothing that is not on that list. |
 | 4-B.1 | ML Kit share+OCR spike (throwaway) | [~] | Unblocked 2026-10-22 — **Path B chosen** (strip INTERNET via custom Expo config plugin; `GUARDRAILS.md` §2.2 untouched; `ocrUseBundled: true` kept so OCR is fully offline). **Verified 2026-10-22:** `app.json` (expo-share-intent + rn-mlkit-ocr plugins, android.permissions array removed), `package.json`/`package-lock.json` (+expo-share-intent@5, expo-linking, rn-mlkit-ocr) are present and uncommitted. **`app/+native-intent.ts` and `app/share-receipt.tsx` DO NOT EXIST** — `ls` returns "No such file or directory"; the handoff claimed they were created but they were never written (see 2026-10-22 Correction log). Still to do: **create `app/+native-intent.ts`** (expo-router ↔ expo-share-intent linking fix, template in HANDOFF §7); **create `app/share-receipt.tsx`** (spike screen placeholder); config plugin stripping INTERNET; wire `MlkitOcr.recognizeText()` into `share-receipt.tsx`; wrap `_layout.tsx` in `<ShareIntentProvider>`; add `recordAudioAndroid: false` to expo-camera plugin; prebuild + rebuild; **re-verify notify-kit R6/R7/R10 with INTERNET stripped (OQ 12a)**; airplane-mode device test (raw OCR text on screen). Commit the spike as part of this step, not as a separate chore. |
-| 4-B.2 | Receipt parser (domain) | [ ] | |
-| 4-B.3 | Add previous payment receipt form | [ ] | |
-| 4-B.4 | Home pivot cleanup | [ ] | |
-| 4-B.5 | Share receipt OCR route (headline) | [ ] | |
-| 4-B.6 | Edit and delete | [ ] | |
+| 4-B.2 | Receipt parser (domain) | [ ] | Spec: `ARCHITECTURE-BUILD-PLAN.md` Step 4-B.2. Apps: GPay, PhonePe, Paytm, Navi. Synthetic samples only. Also detects Failed and Pending receipts so they are refused. |
+| 4-B.3 | Payment form (manual add and edit fields) | [ ] | Spec: Step 4-B.3. One form, no status field, new payments are Done. |
+| 4-B.4 | Home restructure (locked structure, plain look) | [ ] | Spec: Step 4-B.4. Also removes the pending bell and banner. |
+| 4-B.5 | Share-receipt pipeline | [ ] | Spec: Step 4-B.5. Share, read, parse, save as not verified, show result with Looks right, Edit, Undo. Duplicates and failed screenshots refused. Image discarded. |
+| 4-B.6 | Edit, delete, verify, undo | [ ] | Spec: Step 4-B.6. |
+| 4-B.7 | Gallery picker and batch import | [ ] | Spec: Step 4-B.7. Uses expo-document-picker, no new permission. |
 
+#### Phase 4-C: Persistence
+
+| ID | Step | Status | Evidence / notes |
+|---|---|---|---|
+| 4-C.1 | SQLite payments store and migration | [ ] | Spec: Step 4-C.1. Installs expo-sqlite (listed in `ARCHITECTURE.md`). Moves payments out of AsyncStorage. Migration and test required. |
 
 ### Phase 5: Analytics (plain)
 
@@ -108,12 +153,13 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 |---|---|---|---|
 | 5.1 | Analytics maths (domain) | [ ] | |
 | 5.2 | Pace summary | [ ] | |
-| 5.3 | Unconfirmed box | [ ] | |
+| 5.3 | Unconfirmed box | [-] | Retired 2026-10-25. Nothing is pending or unconfirmed any more. |
 | 5.4 | Spending trajectory (plain chart) | [ ] | |
 | 5.5 | Categories and weekdays | [ ] | |
 | 5.6 | Top five payees | [ ] | |
 | 5.7 | Monthly trend and calendar | [ ] | |
 | 5.8 | Calendar upgrades (optional, ask first) | [ ] | |
+| 5.9 | Home analytics glance | [ ] | New 2026-10-25. Daily pace, month-end estimate (labelled estimate), versus last month, link to Analytics. Needs 5.1 and 5.2. |
 
 ### Phase 6: History
 
@@ -121,7 +167,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 |---|---|---|---|
 | 6.1 | Monthly groups | [ ] | |
 | 6.2 | Search | [ ] | |
-| 6.3 | Filters | [ ] | |
+| 6.3 | Filters | [ ] | Changed 2026-10-25: filters are All and Not verified, plus a date range. No Done, Failed or Pending filter. |
 | 6.4 | Export trigger | [ ] | |
 
 ### Phase 7: Settings
@@ -131,20 +177,23 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | 7.1 | Profile | [ ] | |
 | 7.2 | Theme control | [ ] | |
 | 7.3 | Monthly limit | [ ] | |
-| 7.4 | UPI apps | [ ] | |
-| 7.5 | Reminders settings | [ ] | |
-| 7.6 | Quick-add switch | [ ] | |
-| 7.7 | Data | [ ] | |
+| 7.4 | UPI apps | [-] | Retired 2026-10-25. The app no longer lists or opens UPI apps. |
+| 7.5 | Reminders settings | [ ] | Rewritten 2026-10-25: daily reminder times, quiet hours, lock-screen details, backup reminder switch, limit alerts shown as always on, battery settings shortcut. |
+| 7.6 | Quick-add switch | [-] | Retired 2026-10-25 by default (open question 18). Do not build. |
+| 7.7 | Data | [ ] | Changed 2026-10-25: export (warning first), import, PDF statement. The 30-day backup nudge is replaced by the monthly backup reminder in 8.5. |
 
 ### Phase 8: Notifications
 
+Library: react-native-notify-kit (Step 0.3). Spec: `ARCHITECTURE.md` section 9, `DESIGN.md` notifications, `COPY.md`, `EVALS.md`. The old Phase 8 content (hourly grouped reminder, friend payment notification, failed notification with Try again, quick add) is retired as of 2026-10-25.
+
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 8.1 | Reminder planner (domain) | [ ] | |
-| 8.2 | Hourly grouped reminder | [ ] | |
-| 8.3 | Friend payment notification | [ ] | |
-| 8.4 | Failed notification with Try again | [ ] | |
-| 8.5 | Quick add and lock-screen privacy | [ ] | |
+| 8.1 | Notification planner (domain) | [ ] | Pure, tests first: daily times with quiet hours and skip rules, limit thresholds once per month, backup due on the 1st unless already exported that month. |
+| 8.2 | Receipt received notification | [ ] | Looks right, Edit, Undo. Variants: could not read, already added, batch. Re-verify R6, R7, R10 with INTERNET stripped. |
+| 8.3 | Daily log reminders | [ ] | Default 4 a day, customisable. Add screenshots, No payments, Snooze 1 hour. |
+| 8.4 | Limit alerts | [ ] | 80% and 100%, once per month each, always on, only when a limit is set. |
+| 8.5 | Backup reminder | [ ] | 1st of the month, 10:00. Export now, Remind me tomorrow. |
+| 8.6 | Channels and lock-screen privacy | [ ] | Four channels. Lock screen hides details unless the switch is on. |
 
 ### Phase 9: Quality (functional)
 
@@ -206,15 +255,15 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | D4.4 | Analytics | [ ] | |
 | D4.5 | History | [ ] | |
 | D4.6 | Settings | [ ] | |
-| D4.7 | Needs confirming page | [ ] | |
-| D4.8 | Scanner | [ ] | |
+| D4.7 | Receipt result and batch result screens | [ ] | Replaces the retired Needs confirming page (2026-10-25). |
+| D4.8 | Add and edit payment form | [ ] | Replaces the retired scanner step (2026-10-25). |
 
 ### Phase D5: Dialogs
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| D5.1 | Payment dialogs | [ ] | |
-| D5.2 | Result dialogs | [ ] | |
+| D5.1 | Payment form and edit dialogs | [ ] | Pay to a friend, Confirm payment and the UPI exception dialogs are retired (2026-10-25). |
+| D5.2 | Delete, verify and undo | [ ] | Did it go through? and Payment failed are retired (2026-10-25). |
 | D5.3 | Manage dialogs | [ ] | |
 | D5.4 | Data dialogs | [ ] | |
 | D5.5 | Pickers and permissions | [ ] | |
@@ -223,7 +272,7 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| D6.1 | Notification visuals | [ ] | |
+| D6.1 | Notification visuals | [ ] | Four kinds: receipt received, daily log reminder, limit alert, backup reminder. |
 | D6.2 | Motion | [ ] | |
 
 ### Phase D7: Light-mode pass and QA
@@ -247,6 +296,12 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-18 | The `@/` alias points to `./src/*`; `tsconfig.json` `"@/*"` changed from `["./*"]` to `["./src/*"]`. No source imports `@/` yet, so nothing breaks. Jest resolves it via jest-expo `withTypescriptMapping`; Metro does not resolve tsconfig paths, so screens should use relative imports until `extraNodeModules` is added. | owner |
 | 2026-10-21 | Track Pay repositioned from payment launcher to private UPI tracker. Old Phase 4 renamed to 4-A (4.1-4.3 kept [x]; 4.4-4.9 marked [-] superseded). New Phase 4-B: OCR tracker model. GPay/PhonePe decline pre-filled upi://pay links (device-tested 2026-10-21 with @bank, @okaxis, @ybl — all declined; Navi accepts; consistent with 0.4 + ARCHITECTURE.md §13). Decided by owner. | owner |
 | 2026-10-22 | GUARDRAILS Path B chosen for ML Kit OCR. INTERNET permission to be stripped via custom Expo config plugin after prebuild; `GUARDRAILS.md` §2.2 ("no network use") stays literally true; ML Kit runs with bundled model (`ocrUseBundled: true`), telemetry fails silently. Path A (amend GUARDRAILS to permit ML Kit diagnostic telemetry + Settings→About disclosure) rejected — the "no network" positioning is worth more than ~2h saved. Confirmed with owner. | owner |
+| 2026-10-25 | **Scope lock and cleanup.** The AI works only on the current step. Step 4-B.0 (retire the pay flow) runs first. Strict rules are at the top of this file. | owner |
+| 2026-10-25 | Payments enter only by a shared screenshot, screenshot(s) picked from the gallery, or manual add. Track Pay never starts a payment, scans a QR for payment, or opens a UPI app with a pre-filled link. Replaces D8, D9, D11 and Phase 4-A. | owner |
+| 2026-10-25 | A payment read from a screenshot is saved at once with `reviewed = false` and shown to the user straight away (result screen, and the receipt notification in Phase 8) with Looks right, Edit and Undo. Screenshot images are discarded after reading. `GUARDRAILS.md` section 1.4 clarified to match. | owner |
+| 2026-10-25 | Reminders: daily log reminders default to 4 a day (10:00, 14:00, 18:00, 21:00); the user can add, remove and change times and turn them off. Limit alerts at 80% and 100%, once per month each, always on inside the app, only when a limit is set. Monthly backup reminder on the 1st at 10:00. | owner |
+| 2026-10-25 | Home structure locked (design canvas "Track Pay Home"): greeting header, month card, quick access (Add from screenshot, Add manually), analytics glance, recent payments, tab bar. Colours and sizes come from `DESIGN-TOKENS.md`, not from the mockup. | owner |
+| 2026-10-25 | Planner defaults taken where the owner had not answered (the owner may change any of them): payments move to SQLite (4-C.1); the top-bar bell and the Needs-confirming page are removed; No payments only dismisses the day's reminders (no no-spend-day record); the quick-add notification is retired; the backup reminder opens the export choices (backup file or monthly PDF); 1 to 6 daily reminder times; gallery picking uses expo-document-picker (already approved) with no new permission. | owner (defaults) |
 
 ## Open questions (ask before guessing; defaults in brackets)
 
@@ -268,6 +323,15 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 14. **[DECIDED 2026-10-22: Path B — owner]** ML Kit GUARDRAILS path — Path A (amend GUARDRAILS §2.2 + AI-RULES §10.4 to permit ML Kit diagnostic telemetry with in-app disclosure in Settings → About; §12 approval needed) OR Path B (strip INTERNET permission via custom Expo config plugin; GUARDRAILS §2.2 untouched; requires manifest surgery + testing that Expo OTA updates + dev menu still work). Decision recorded in Decisions table, 2026-10-22. See OQ 15 (moot under Path B).
 15. **[MOOT under Path B — Path A only]** ML Kit in-app disclosure wording — proposed About text: "Track Pay uses Google ML Kit to read UPI receipts on your phone. …" Requires final approval before 4-B.5.
 16. **EVALS.md pivot update** — many P-cases reference scanner flows now unreachable. Mark P1-P6, P9, P10 as "scanner-flow — unreachable post-pivot"; add D10, D11 (share receipt OCR); keep P7, U1-U9. §12 approval needed during 4-B.1 closeout.
+17. **No-spend days.** Should "No payments" on a reminder be recorded as a no-spend day? [default: no. It only dismisses the day's remaining reminders. No new table.]
+18. **Quick-add notification.** Keep or retire the persistent "log a payment without opening the app" notification? [default: retired; do not build 7.6]
+19. **Number of daily reminders.** [default: 1 to 6 times a day, 4 by default]
+20. **Share flow return.** After the result screen, should the app return to the previous app by itself? A silent version (custom Kotlin share receiver, or closing the app after saving) is optional, needs a spike, and is not part of M1. [default: no; the user taps Done to go Home]
+21. **OCR accuracy bar.** [default: on 10 synthetic screenshots per app, the amount is read correctly on at least 9; payee, date and reference are best effort and always editable]
+22. **Existing test payments.** Old Pending and Failed rows in AsyncStorage. [default: convert Pending to Done, keep Failed as history and uncounted; skip if no real data exists]
+23. **Light theme for Home.** The mockup exists in dark only. [default: Track B D4.3 builds both themes from the tokens]
+24. **Other scripts.** [default: Latin script only in M1; Hindi and others need extra ML Kit models, ask first]
+25. **Exact alarms.** `SCHEDULE_EXACT_ALARM` for the daily reminders (replaces the open part of 12a). [default: do not request it; reminders are inexact and may arrive a few minutes late]
 
 
 ## Log
@@ -365,3 +429,4 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-22 | Correction | The handoff (`HANDOFF-2026-10-22.md` / prior chat) claimed `app/+native-intent.ts` and `app/share-receipt.tsx` were created during the spike. **`ls app/+native-intent.ts app/share-receipt.tsx` returns "No such file or directory"** — neither file exists on disk or in git. `git status --ignored app/` shows no changes in the `app/` route directory. The other claimed spike files (`app.json`, `package.json`, `package-lock.json`) ARE present and uncommitted. 4-B.1 task list updated accordingly: the two app files must be **created from scratch**, not modified. The 4-B.1 row has been corrected to reflect the actual state. | BUILD-TODO.md |
 | 2026-10-22 | Correction to OQ 16 | EVALS.md pivot update executed. Beyond OQ 16's listed P1–P6, P9, P10, also marked unreachable: P7 (Pay-to-a-friend removed from Home per 4-B.4), P12a–P12g and R11 (retry-after-failure flow removed by pivot), §9's "confirm sheet 300ms" bullet. Added D10, D11 (§6). D7 extended with Path B verification clauses. §12 approval: owner, 2026-10-22. | EVALS.md, BUILD-TODO.md |
 | 2026-10-22 | Correction to OQ 16 | EVALS.md pivot update executed. Beyond OQ 16's listed P1–P6, P9, P10, also marked unreachable: P7 (Pay-to-a-friend removed from Home per 4-B.4), P12a–P12g and R11 (retry-after-failure flow removed by pivot), §9's "confirm sheet 300ms" bullet. Added D10, D11 (§6). D7 extended with Path B verification clauses. §12 approval: owner, 2026-10-22. | EVALS.md, BUILD-TODO.md |
+| 2026-10-25 | Plan reset | The owner reset the plan after the screenshot and OCR pivot. Added the SCOPE LOCK and cleanup block at the top. Added Step 4-B.0 (retire the pay flow). Rewrote 4-B.2 to 4-B.7, added 4-C.1 and 5.9, replaced Phase 8. Retired 5.3, 7.4, 7.6, the old Phase 8 content, and Track B D4.7, D4.8, D5.1 and D5.2 in their old form. Updated AI-RULES, GUARDRAILS, ARCHITECTURE, ARCHITECTURE-BUILD-PLAN, DESIGN, COPY, EVALS, DESIGN-BUILD-PLAN, README, AGENTS and CLAUDE. No history deleted. Current step moved to 4-B.0; 4-B.1 stays `[~]` and resumes after it. | all project documents |
