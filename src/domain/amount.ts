@@ -74,7 +74,7 @@ export function parseAmount(input: string): AmountParseResult {
 
 // Input helper: paise -> "3630.00" (plain decimal for pre-filling text fields).
 // NOT a display formatter — Money.tsx owns the ₹ currency formatting. Lives
-// here so ConfirmPaymentDialog can pre-fill the amount field with a value
+// here so the payment form can pre-fill the amount field with a value
 // that parseAmount can re-parse on the round-trip.
 export function formatPaise(paise: number): string {
   const rupees = (paise / 100).toFixed(2);

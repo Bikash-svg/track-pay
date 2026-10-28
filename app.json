@@ -45,19 +45,6 @@
       ],
       "react-native-notify-kit",
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Track Pay uses the camera to scan UPI QR codes. Nothing is saved or sent.",
-          "recordAudioAndroid": false
-        }
-      ],
-      [
-        "expo-share-intent",
-        {
-          "androidIntentFilters": ["image/*"]
-        }
-      ],
-      [
         "rn-mlkit-ocr",
         {
           "ocrUseBundled": true,

@@ -6,7 +6,7 @@ module.exports = function withConfigChanges(config) {
     const main = activities?.find(
       (a) => a.$?.['android:name'] === '.MainActivity'
     );
-    if (!main) return config;
+    if (!main) return cfg;
 
     const required = [
       'keyboard',
@@ -31,6 +31,6 @@ module.exports = function withConfigChanges(config) {
       main.$['android:launchMode'] = 'singleTask';
     }
 
-    return config;
+    return cfg;
   });
 };

@@ -4,7 +4,6 @@ import { Field } from '../../src/ui/Field';
 import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
 import { SpendCard } from '../../src/ui/SpendCard';
-import { Banner } from '../../src/ui/Banner';
 import { useDialog } from '../../src/ui/DialogProvider';
 import { usePendingCount } from '../../src/ui/PendingCountProvider';
 import { useTheme } from '../../src/ui/useTheme';
@@ -14,8 +13,6 @@ import { computeMonthStats } from '../../src/domain/monthStats';
 import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
 import { usePayments } from '../../src/data/payments';
-import { PayToFriendDialog } from '../../src/ui/PayToFriendDialog';
-import { View } from 'react-native';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -46,22 +43,10 @@ export default function HomeScreen() {
   const [limit, setLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
-  const { payments, addFriendPayment } = usePayments();
-  const { open, close } = useDialog();
+  const { payments } = usePayments();
   const now = new Date();
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
-
-  const handleSaveFriend = (input: {
-    amountPaise: number;
-    payeeName: string;
-    preferredUpiPackage: string;
-  }) => {
-    addFriendPayment(input);
-    setPendingCount(pendingCount + 1);
-    close();
-    if (__DEV__) console.warn('[4.1 dev] Saved friend payment pending');
-  };
 
   const recentPayments = payments.slice(0, 4);
   const showRealPayments = recentPayments.length > 0;
@@ -71,50 +56,17 @@ export default function HomeScreen() {
       <SpendCard stats={stats} month={month} />
 
       {/* Quick actions (DESIGN.md §1 item 2) */}
-      <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
-        <View style={{ flex: 1 }}>
-          <Button variant="primary" onPress={() => router.push('/scanner')} accessibilityLabel={copy.scanQR}>
-            {copy.scanQR}
-          </Button>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Button
-            variant="primary"
-            onPress={() =>
-              open({
-                title: copy.payToFriend,
-                children: (
-       <PayToFriendDialog
-         onSave={handleSaveFriend}
-         onCancel={close}
-       />
-                ),
-              })
-            }
-            accessibilityLabel={copy.payToFriend}
-          >
-            {copy.payToFriend}
-          </Button>
-        </View>
-      </View>
+      {/* deleted the <view> block */}
 
       {/* Pay button — purpose undecided (new BUILD-TODO open question #12) */}
       {/* BUILD-TODO open question #12 — Pay button purpose undecided. Disabled until Phase 4 defines its flow. */}
-      <Button variant="secondary" disabled onPress={() => {}}>
-        {copy.pay}
-      </Button>
+      
 
       {/* Add payment already made (DESIGN.md §1 item 3) */}
-      <Button variant="secondary" onPress={() => router.push('/add-payment')} accessibilityLabel={copy.addPaymentAlreadyMade}>
-        {copy.addPaymentAlreadyMade}
-      </Button>
+      
 
       {/* Banner (DESIGN.md §1 item 4) — moved from 3.3's temporary spot */}
-      {pendingCount > 0 && (
-        <Banner action={<Button variant="text" onPress={() => router.push('/pending')} accessibilityLabel={copy.review}>{copy.review}</Button>}>
-          {copy.paymentNeedsConfirming(pendingCount)}
-        </Banner>
-      )}
+      
 
       {/* Recent Payments (DESIGN.md §1 item 5) — after the Banner, before DevSection */}
       <Text variant="secondary">{copy.recentPayments}</Text>

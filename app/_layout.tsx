@@ -24,14 +24,7 @@ export default function RootLayout() {
           <DialogProvider>
             <SplashGate>
               <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen
-                  name="pending"
-                  options={{ headerShown: true, title: 'Needs confirming' }}
-                />
-                <Stack.Screen
-                  name="scanner"
-                  options={{ headerShown: true, title: 'Scan a UPI QR' }}
-                />
+                
               </Stack>
             </SplashGate>
           </DialogProvider>

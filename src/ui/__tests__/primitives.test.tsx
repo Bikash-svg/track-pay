@@ -15,9 +15,6 @@ describe('formatMoney', () => {
 describe('copy', () => {
   it('exposes exact copy strings', () => {
     expect(copy.appName).toBe('Track Pay');
-    expect(copy.payToFriend).toBe('Pay to a friend');
-    expect(copy.paymentNeedsConfirming(1)).toBe('1 payment needs confirming');
-    expect(copy.paymentNeedsConfirming(3)).toBe('3 payments need confirming');
   });
 });
 
