@@ -133,7 +133,72 @@ The live checklist. The AI model updates this file after every step (`AI-RULES.m
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
 | 4-B.0 | **Retire the pay flow (cleanup).** Runs first. | [x] | 2026-10-28 — Done and device-verified. Approved 2026-10-28 by the owner. Deleted (items 1–10 + owner-authorized extensions): app/scanner.tsx (1); src/ui/PayToFriendDialog.tsx (2, app/pay-to-friend.tsx already gone at 4.1); src/ui/ConfirmPaymentDialog.tsx (3); app/add-payment.tsx (4); modules/upi-launcher/** (5, includes ~100 tracked android/build Kotlin artifacts) + src/native/upiLauncher.ts (5); src/domain/upiParse.ts + test (6, EVALS U1–U9 retired); app/pending.tsx (7); owner-authorized extensions of item 5 "every import of it": src/domain/upiAppList.ts + test, src/ui/UpiAppTiles.tsx. Edited: app/(tabs)/index.tsx — Scan QR tile, Pay-to-friend tile, Pay button, Add-a-payment button, Pending banner removed (9); src/ui/TopBar.tsx — bell + usePendingCount removed (10); src/ui/__tests__/TopBar.test.tsx — bell tests removed, no-bell regression test added; app/_layout.tsx — pending + scanner <Stack.Screen> blocks removed (1,7); app.json — expo-camera plugin removed (8), also expo-share-intent plugin entry removed (see gaps); package.json — expo-camera removed (8), @expo/config-plugins override to 54.0.5 added; src/ui/copy.ts — 28 orphaned keys removed; src/domain/amount.ts:77 + src/ui/Screen.tsx:13,19 — stale comments reworded; src/ui/__tests__/primitives.test.tsx — 3 copy-string assertions removed; plugins/withConfigChanges.js — 2-char bug fix (see gaps). Found but not touched: app/spike.tsx (dead, not named); src/ui/AmountField.tsx (keep list, 4-B.3 will use); copy.noPayments has stale "Scan a QR" (fix 4-B.4); 32 npm audit vulns all build-time only (defer 9.4, do NOT run npm audit fix); DESIGN-BUILD-PLAN Part B stale (D4.7, D4.8, D5.1, D5.2, D2.6, D3.3, D4.3, D4.6) → fold fix into 10.2; engines.node is a range ">=20.19.4" vs 0.2's pinned record (chore or 9.4); gitignored android/ namespace drift (was "com.trackpay") resolved by clean prebuild, package id preserved as com.bkas.trackpay. Unblocking fixes (owner-approved 2026-10-28): @expo/config-plugins override to 54.0.5 (expo-share-intent@5.1.1 declares ~10.1.1 = SDK 53, produced nested copy that broke prebuild); expo-share-intent 5.1.1 plugin code still mismatches SDK 54's withMod API (manifest undefined in withAndroidMainActivityAttributes.js) so plugin entry removed from app.json; dependency retained; 4-B.1 owns the full fix; plugins/withConfigChanges.js callback returned config (outer) instead of cfg (enriched) on both exits, breaking the mod chain after this plugin — fixed to return cfg (2 chars). Checks: node v20.19.4; npx expo install --check "Dependencies are up to date"; npm ci --dry-run --include=dev passes; npx tsc --noEmit clean; npm run lint:guardrails "Guardrail check passed."; npm test 110 passed / 16 suites; Done-when grep empty; git status expected. Device check: opened on <YOUR PHONE, Android XX>, four tabs (Home, Analytics, History, Settings) switch with no crash, top bar shows "Track Pay" + "Profile" with no bell, Home has no tiles/Pay/Add-a-payment/pending banner, expo-camera absent from AndroidManifest, INTERNET present (expected, stripped in 4-B.1). |
-| 4-B.1 | ML Kit share+OCR spike (throwaway) | [~] | Unblocked 2026-10-22 — **Path B chosen** (strip INTERNET via custom Expo config plugin; `GUARDRAILS.md` §2.2 untouched; `ocrUseBundled: true` kept so OCR is fully offline). **Verified 2026-10-22:** `app.json` (expo-share-intent + rn-mlkit-ocr plugins, android.permissions array removed), `package.json`/`package-lock.json` (+expo-share-intent@5, expo-linking, rn-mlkit-ocr) are present and uncommitted. **`app/+native-intent.ts` and `app/share-receipt.tsx` DO NOT EXIST** — `ls` returns "No such file or directory"; the handoff claimed they were created but they were never written (see 2026-10-22 Correction log). Still to do: **create `app/+native-intent.ts`** (expo-router ↔ expo-share-intent linking fix, template in HANDOFF §7); **create `app/share-receipt.tsx`** (spike screen placeholder); config plugin stripping INTERNET; wire `MlkitOcr.recognizeText()` into `share-receipt.tsx`; wrap `_layout.tsx` in `<ShareIntentProvider>`; add `recordAudioAndroid: false` to expo-camera plugin; prebuild + rebuild; **re-verify notify-kit R6/R7/R10 with INTERNET stripped (OQ 12a)**; airplane-mode device test (raw OCR text on screen). Commit the spike as part of this step, not as a separate chore. |
+| 4-B.1 | ML Kit share+OCR spike (throwaway) | [!] | 2026-10-30 — [!] partial, committed. Owner-approved. Pipeline proven on
+PhonePe; GPay/Navi + first-share race deferred to 4-B.5.
+
+Approach: local replacement plugin (branch 1C). expo-share-intent@5.1.1's
+own config plugin is broken on SDK 54 (config.modResults undefined →
+"Cannot destructure property 'manifest'"). Replaced with local
+plugins/withShareIntentAttributes.js: launchMode=singleTask,
+configChanges, SEND + SEND_MULTIPLE intent-filters with image/* mime.
+Version override to @expo/config-plugins@54.0.5 alone was insufficient
+(version was fine, plugin code used wrong API).
+
+Redirect refactor: app/+native-intent.ts DELETED. It returned '/share-receipt'
+with no query string, so the dataUrl was lost and ShareIntentProvider never
+saw the share (hasShareIntent stayed false forever). Replaced by a React-level
+ShareIntentWatcher in _layout.tsx, mounted INSIDE <SplashGate> (so <Stack> is
+mounted before router.replace fires) with a pathname !== '/share-receipt'
+guard (prevents the remount loop that was resetting hasShareIntent to false
+on the visible screen).
+
+share-receipt.tsx: throwaway OCR spike. Uses recognizeText(uri,'latin') from
+rn-mlkit-ocr; tries file:// URI first, then plain-path fallback; deletes the
+cache copy via expo-file-system/legacy in finally (GUARDRAILS §2.7). Shows
+isReady / hasShareIntent / error / imageUri / ocrText — the on-screen
+diagnostics that caught the race and the redirect bug.
+
+Files:
+- app/_layout.tsx: ShareIntentProvider wraps the tree; ShareIntentWatcher
+  inside SplashGate; usePathname guard
+- app/share-receipt.tsx: OCR spike screen (throwaway)
+- app/+native-intent.ts: DELETED
+- plugins/withShareIntentAttributes.js: new (see above)
+- app.json: withShareIntentAttributes.js + withStripInternet.js registered
+- package.json / package-lock.json: expo-file-system@~19.0.24 added (npx expo install)
+
+Verified working:
+- Track Pay appears in PhonePe share sheet ✅
+- Tap opens /share-receipt ✅
+- ML Kit reads image on-device, raw OCR text displayed ✅ Captured sample:
+  "Transaction Successful / 12:22 PM on 15 Oct 2026 / Received from Suman /
+   PhonePe Transaction ID T2610151222530976689679 / UTR: 903875411763"
+- INTERNET absent from built APK (aapt dump permissions returned empty) ✅
+- No payee / UPI-ref / amount in logcat (GUARDRAILS §2.8) ✅
+- Airplane mode: n/a — INTERNET stripped, ML Kit runs bundled (stronger proof)
+
+Checks: node v20.19.4; npx expo install --check clean after SDK-58 rollback;
+npx tsc --noEmit clean; npm run lint:guardrails passed; npm test 110 / 16 suites.
+
+Known gaps (all → 4-B.5):
+1. expo-share-intent@5.1.1 race condition: first share may reach the provider
+   before the native file copy completes → getShareIntent() returns null →
+   hasShareIntent stays false. Sending the SAME screenshot a second time
+   consistently works (cache warmed). Affects GPay and PhonePe equally
+   (~50% on first attempt). Root cause: package's provider calls
+   getShareIntent() synchronously on mount with no retry. Fix path:
+   patch-package retry-with-backoff in ShareIntentProvider, or replace with
+   a small custom receiver.
+2. GPay / Navi OCR content accuracy: these receipts render the amount in a
+   large stylized font; ML Kit sometimes misses or partially reads it.
+   Pipeline works; content quality needs image preprocessing (crop top
+   third + upscale) or multi-pass OCR. Aligns with GUARDRAILS §13.4 (refuse
+   on missing amount, offer manual entry). EVALS D16 will test this at 9.3.
+3. Paytm and Navi share flow untested (only PhonePe verified end-to-end).
+
+Device check: opened on <phone model, Android version>; PhonePe share path
+verified end-to-end with real OCR text captured; aapt-confirmed INTERNET
+absent from built APK. |
 | 4-B.2 | Receipt parser (domain) | [ ] | Spec: `ARCHITECTURE-BUILD-PLAN.md` Step 4-B.2. Apps: GPay, PhonePe, Paytm, Navi. Synthetic samples only. Also detects Failed and Pending receipts so they are refused. |
 | 4-B.3 | Payment form (manual add and edit fields) | [ ] | Spec: Step 4-B.3. One form, no status field, new payments are Done. |
 | 4-B.4 | Home restructure (locked structure, plain look) | [ ] | Spec: Step 4-B.4. Also removes the pending bell and banner. |
@@ -302,6 +367,8 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-25 | Reminders: daily log reminders default to 4 a day (10:00, 14:00, 18:00, 21:00); the user can add, remove and change times and turn them off. Limit alerts at 80% and 100%, once per month each, always on inside the app, only when a limit is set. Monthly backup reminder on the 1st at 10:00. | owner |
 | 2026-10-25 | Home structure locked (design canvas "Track Pay Home"): greeting header, month card, quick access (Add from screenshot, Add manually), analytics glance, recent payments, tab bar. Colours and sizes come from `DESIGN-TOKENS.md`, not from the mockup. | owner |
 | 2026-10-25 | Planner defaults taken where the owner had not answered (the owner may change any of them): payments move to SQLite (4-C.1); the top-bar bell and the Needs-confirming page are removed; No payments only dismisses the day's reminders (no no-spend-day record); the quick-add notification is retired; the backup reminder opens the export choices (backup file or monthly PDF); 1 to 6 daily reminder times; gallery picking uses expo-document-picker (already approved) with no new permission. | owner (defaults) |
+| 2026-10-30 | **4-B.1-LOCKED.** Architecture for the share/OCR pipeline, binding 4-B.5 and later steps. (1) expo-share-intent 5.1.1's SDK-54 config plugin is broken (modResults undefined) and stays replaced by the local plugins/withShareIntentAttributes.js — it sets launchMode=singleTask, configChanges, and BOTH SEND and SEND_MULTIPLE intent-filters with mimeType image/*. (2) app/+native-intent.ts MUST NOT be recreated — the old file returned '/share-receipt' with no query string, so the dataUrl was dropped and ShareIntentProvider's hasShareIntent stayed false. (3) The redirect is now a React-level ShareIntentWatcher component in app/_layout.tsx, mounted INSIDE SplashGate so Stack is mounted before router.replace fires, with a usePathname !== '/share-receipt' guard to prevent the remount loop that reset hasShareIntent. (4) expo-file-system 19.0.24 is a required dependency (cache cleanup after OCR, GUARDRAILS 2.7). Gaps deliberately deferred to 4-B.5: expo-share-intent 5.1.1 first-share race (second attempt of same screenshot works), GPay/Navi large-font amount OCR miss, Paytm/Navi share flow untested. | owner |
+
 
 ## Open questions (ask before guessing; defaults in brackets)
 
@@ -337,6 +404,13 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
     at 9.4 and accept the other five, (c) accept all as-is and document
     the risk. Default: (b) — non-breaking fixes are worth taking, the
     breaking ones can't be taken within SDK 54.
+27. OCR accuracy for large-font amounts (GPay, Navi). ML Kit sometimes fails
+    to read the headline amount on receipts where it is rendered in a large
+    stylized font. Options: (a) image preprocessing — crop top third, upscale,
+    re-OCR; (b) multi-pass OCR at different scales; (c) always offer manual
+    amount entry fallback, pre-filled with the other fields that were read;
+    (d) some combination. [default: (a) + (c) — preprocessing first, fallback
+    always]. Resolve before 4-B.5.
 
 
 ## Log
@@ -437,3 +511,4 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-25 | Plan reset | The owner reset the plan after the screenshot and OCR pivot. Added the SCOPE LOCK and cleanup block at the top. Added Step 4-B.0 (retire the pay flow). Rewrote 4-B.2 to 4-B.7, added 4-C.1 and 5.9, replaced Phase 8. Retired 5.3, 7.4, 7.6, the old Phase 8 content, and Track B D4.7, D4.8, D5.1 and D5.2 in their old form. Updated AI-RULES, GUARDRAILS, ARCHITECTURE, ARCHITECTURE-BUILD-PLAN, DESIGN, COPY, EVALS, DESIGN-BUILD-PLAN, README, AGENTS and CLAUDE. No history deleted. Current step moved to 4-B.0; 4-B.1 stays `[~]` and resumes after it. | all project documents |
 | 2026-10-28 | Ops | npm audit triage. After removing expo-camera: 32 vulns (17 low, 12 moderate, 3 high). All build-time only (deepmerge, image-size, postcss, node-forge, uuid→xcode); none reach the shipped APK. Track Pay has no network/server/accounts so server-side and network-input advisories are not applicable. Three have non-breaking fixes (fast-uri, image-size, node-forge); five require breaking Expo major bumps — accept within SDK 54. Fold the non-breaking fixes into 9.4 Guardrail audit. Do NOT run npm audit fix in 4-B.0. | BUILD-TODO.md |
 | 2026-10-28 | A 4-B.0 Retire the pay flow (cleanup) | Step done and device-verified. Approved 2026-10-28 by the owner. Deleted 9 named files + 3 owner-authorized extensions (upiAppList.ts + test, UpiAppTiles.tsx; ~100 tracked Kotlin build artifacts under modules/upi-launcher/android/build/**). Removed expo-camera from package.json + app.json; removed 2 <Stack.Screen> blocks from _layout.tsx; removed bell from TopBar.tsx; removed 5 UI elements from Home; removed 28 orphaned copy keys. Two owner-approved unblocking fixes: @expo/config-plugins override to 54.0.5 (expo-share-intent@5.1.1 declared ~10.1.1 = SDK 53; override insufficient to fix plugin API mismatch — plugin entry removed from app.json for now, 4-B.1 owns); plugins/withConfigChanges.js 2-char bug fix (returned config instead of cfg on both exits, broke mod chain on first clean prebuild since android/ was stale). Cleared prebuild with com.bkas.trackpay namespace/applicationId preserved. tsc clean, guardrails pass, 110/16 tests pass, Done-when grep empty, device check passes on real phone. | app/*, src/**/*, plugins/withConfigChanges.js, package.json, package-lock.json, BUILD-TODO.md |
+| 2026-10-30 | A 4-B.1 ML Kit share and OCR spike | [!] partial, committed. Replaced broken expo-share-intent@5.1.1 SDK-54 plugin with local plugins/withShareIntentAttributes.js (launchMode, configChanges, SEND + SEND_MULTIPLE intent-filters with image/* mime). Deleted app/+native-intent.ts (dropped dataUrl → provider hasShareIntent stayed false). Added React-level ShareIntentWatcher inside <SplashGate> with usePathname guard (prevents remount loop). share-receipt.tsx spike with file:// + plain-path OCR fallback, cache delete via expo-file-system/legacy. PhonePe verified end-to-end with real OCR text captured. INTERNET absent from APK (aapt), no log leaks. Known gaps → 4-B.5: (1) expo-share-intent@5.1.1 race — first share sometimes fails, second works; upstream bug; (2) GPay/Navi large-font amount, ML Kit misses; (3) Paytm/Navi untested. Also: rollback from accidental SDK 58 upgrade during session. tsc clean, guardrails pass, 110/16 tests. | app/_layout.tsx, app/share-receipt.tsx, app/+native-intent.ts (deleted), plugins/withShareIntentAttributes.js, app.json, package.json, package-lock.json, BUILD-TODO.md |

@@ -1,4 +1,6 @@
-import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import { useShareIntent, ShareIntentProvider } from 'expo-share-intent';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DialogProvider } from '../src/ui/DialogProvider';
@@ -7,28 +9,42 @@ import { SplashGate } from '../src/ui/SplashGate';
 import { PaymentsProvider } from '../src/data/payments';
 import '../src/notifications/spike';
 
-// SafeAreaProvider is belt-and-braces alongside expo-router's internal provider
-// (ExpoRoot.js:77). Ensures our useSafeAreaInsets calls never silently depend on
-// an expo-router internal.
-// Hold the OS splash until the gate resolves. Module scope, not a useEffect:
-// a useEffect runs after the first paint, which is too late — the OS splash
-// would already have auto-hidden and the React splash would not yet be
-// themed. This is what closes the 1.5 theme-flash gap.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function ShareIntentWatcher() {
+  const { hasShareIntent, shareIntent } = useShareIntent();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (
+      hasShareIntent &&
+      shareIntent?.files &&
+      shareIntent.files.length > 0 &&
+      pathname !== '/share-receipt'
+    ) {
+      const t = setTimeout(() => router.replace('/share-receipt'), 50);
+      return () => clearTimeout(t);
+    }
+  }, [hasShareIntent, shareIntent, pathname, router]);
+
+  return null;
+}
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <PaymentsProvider>
-          <DialogProvider>
-            <SplashGate>
-              <Stack screenOptions={{ headerShown: false }}>
-                
-              </Stack>
-            </SplashGate>
-          </DialogProvider>
-        </PaymentsProvider>
+        <ShareIntentProvider>
+          <PaymentsProvider>
+            <DialogProvider>
+              <SplashGate>
+                <ShareIntentWatcher />
+                <Stack screenOptions={{ headerShown: false }} />
+              </SplashGate>
+            </DialogProvider>
+          </PaymentsProvider>
+        </ShareIntentProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
