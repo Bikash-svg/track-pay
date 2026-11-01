@@ -28,6 +28,7 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - {Month}
 - Spend on {Month}
 - Limit ₹15,000
+- 24% used
 - Left ₹11,370
 - Allowance a day ₹568
 - Over by ₹X
@@ -37,9 +38,9 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Add manually
 - Pay in any UPI app, then share the success screenshot here.
 - This month at a glance
-- Daily pace ₹330 a day
-- Month-end estimate ₹10,230 (estimate)
-- Versus last month
+- DAILY PACE · ₹330 · a day
+- MONTH-END ESTIMATE · ₹10,230 · estimate
+- VERSUS LAST MONTH · ↓ 12% · ₹495 less
 - Analytics
 - Recent payments
 - History
@@ -98,12 +99,13 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 
 - History
 - All ▾
-- Not verified
+- Not verified ({n})
 - Search payee, note or category
 - {Month} {Year}
 - Spent ₹X
 - Export data
 - No payments yet.
+- No payments found.
 
 ## Settings
 
@@ -124,6 +126,7 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Save all payments as a backup file
 - Restore payments from a backup file
 - Pick a month and save it as a PDF
+- trackpay_export_{year}_{month}.json · {n} records
 - Track Pay keeps everything on this phone. It records payments you share as screenshots or add by hand. It does not detect payments made elsewhere and it never starts a payment.
 
 ## 2. Dialogs (centred)
@@ -157,9 +160,11 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Choose a month
 - Create PDF
 - How many times a day
+- Add reminder time
+- Edit
 - Reminders wait until quiet hours end
-- Start
-- End
+- From
+- To
 - Pick the same time for both to turn quiet hours off.
 - Done
 - Get reminders and payment receipts
