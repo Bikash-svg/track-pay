@@ -22,6 +22,7 @@ export const copy = {
   edit: 'Edit',
   cancel: 'Cancel',
   save: 'Save',
+  saveChanges: 'Save changes',
   deletePayment: 'Delete payment',
   enterAmountGreaterThanZero: 'Enter an amount greater than ₹0',
   useAtMostTwoDecimals: 'Use at most 2 decimal places',
@@ -30,6 +31,8 @@ export const copy = {
   // 4-B.3 payment form (already in COPY.md dialogs).
   toWhom: 'To whom',
   whatWasThisFor: 'What was this for?',
+  date: 'Date',
+  category: 'Category',
   exportData: 'Export data',
   skipForNow: 'Skip for now',
   firstName: 'First name',

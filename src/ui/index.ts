@@ -29,6 +29,6 @@ export { DialogHost } from './DialogHost';
 export { DialogProvider, useDialog, type DialogOptions } from './DialogProvider';
 export { Splash } from './Splash';
 export { SplashGate } from './SplashGate';
-export type { ButtonVariant } from './Button';
 export { SpendCard } from './SpendCard';
 export { barColour } from './barColour';
+export { PaymentFormDialog } from './PaymentFormDialog';

@@ -1,24 +1,3 @@
-// INTERIM payments store (Step 4.1 → extended 4.3).
-//
-// 4.3: extended from pure in-memory to AsyncStorage-backed to satisfy P6
-// (survive-process-kill). Public API unchanged: usePayments, addFriendPayment,
-// addQrPayment. Both add-* functions write to AsyncStorage before resolving so
-// a kill between save and UPI launch still leaves the pending payment
-// persisted. Phase 5 replaces AsyncStorage with SQLite behind the same exports
-// — no caller touches AsyncStorage directly. getInitialPayments is async-loaded
-// in a useEffect on mount; the first render shows [] briefly then hydrates.
-// This supersedes 4.1's 'session-scoped' note.
-//
-// The shape below is the ARCHITECTURE.md §5 schema, narrowed to what a friend
-// payment needs. payeeVpa, label, confirmedAt and upiRef are always null at
-// creation; they are filled by 4.3 (upiRef) and 4.5 (label, category,
-// confirmedAt). Declaring them here keeps one row type for the whole app.
-//
-// Only this file creates payments. addFriendPayment is the single entry
-// point, so every payment starts as pending (INITIAL_STATUS) by construction
-// (EVALS S1) — there is no second path that could start one as Done or
-// Failed; the manual-add path (4.9) gets its own function when it arrives.
-
 import {
   createContext,
   useCallback,
@@ -33,37 +12,40 @@ import { INITIAL_STATUS, type PaymentStatus } from '../domain/paymentState';
 
 const PAYMENTS_KEY = 'trackpay:payments';
 
-export interface FriendPayment {
+// The new Payment type that matches ARCHITECTURE.md §5 fully
+export interface Payment {
   readonly id: string;
   readonly amountPaise: number;
   readonly payeeName: string;
   readonly payeeVpa: string | null;
   readonly label: string | null;
-  readonly category: string;
-  readonly status: PaymentStatus;
-  readonly source: 'friend' | 'qr';
+  readonly category: 'Food' | 'Shopping' | 'Bills' | 'Transport' | 'Other';
+  readonly status: 'success'; // all manual payments are Done
+  readonly source: 'manual' | 'receipt';
+  readonly reviewed: boolean;
   readonly createdAt: number;
-  readonly confirmedAt: number | null;
+  readonly paidAt: number | null; // present but null for manual entries per D3
   readonly upiRef: string | null;
 }
 
-export interface AddFriendPaymentInput {
-  readonly amountPaise: number;
-  readonly payeeName: string;
-  readonly preferredUpiPackage: string | null;
-}
+export type PaymentCategory = 'Food' | 'Shopping' | 'Bills' | 'Transport' | 'Other';
+export const CATEGORIES = ['Food', 'Shopping', 'Bills', 'Transport', 'Other'] as const;
 
-export interface AddQrPaymentInput {
-  readonly amountPaise: number;
-  readonly payeeName: string;
-  readonly payeeVpa: string;
-  readonly label: string | null;
-}
+// New PaymentInput type per D2
+export type PaymentInput = {
+  amountPaise: number;
+  payeeName: string;         // caller pre-validates; 'Unknown' if user left empty
+  label: string | null;      // note
+  category: PaymentCategory; // 'Food'|'Shopping'|'Bills'|'Transport'|'Other'
+  createdAt: Date;           // user-chosen date/time; NOT the wall-clock moment
+  source: 'manual' | 'receipt';
+  reviewed: boolean;
+};
 
 interface PaymentsContextValue {
-  readonly payments: readonly FriendPayment[];
-  readonly addFriendPayment: (input: AddFriendPaymentInput) => Promise<FriendPayment>;
-  readonly addQrPayment: (input: AddQrPaymentInput) => Promise<FriendPayment>;
+  readonly payments: readonly Payment[];
+  readonly addPayment: (input: PaymentInput) => Promise<Payment>;
+  readonly updatePayment: (id: string, updates: Partial<PaymentInput>) => Promise<void>;
 }
 
 const PaymentsContext = createContext<PaymentsContextValue | undefined>(
@@ -71,20 +53,20 @@ const PaymentsContext = createContext<PaymentsContextValue | undefined>(
 );
 
 // Test seam. Lets the payments tests seed the store with an initial list
-// without depending on addFriendPayment's id/timestamp generation. Mirrors
+// without depending on addPayment's id/timestamp generation. Mirrors
 // setStorage() in settings.ts: the default is the in-memory store, tests
 // inject their own.
-export function setPaymentsSeed(next: FriendPayment[]): void {
+export function setPaymentsSeed(next: Payment[]): void {
   seed = next;
 }
 
-let seed: FriendPayment[] = [];
+let seed: Payment[] = [];
 
 function makeId(): string {
   return String(Date.now()) + Math.random().toString(36).slice(2, 8);
 }
 
-async function persist(payments: FriendPayment[]): Promise<void> {
+async function persist(payments: Payment[]): Promise<void> {
   try {
     await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments));
   } catch {
@@ -97,7 +79,7 @@ export function PaymentsProvider({
 }: {
   readonly children: ReactNode;
 }) {
-  const [payments, setPaymentsState] = useState<FriendPayment[]>(seed);
+  const [payments, setPaymentsState] = useState<Payment[]>(seed);
   const [hydrated, setHydrated] = useState(false);
 
   // Load from AsyncStorage on mount
@@ -107,7 +89,7 @@ export function PaymentsProvider({
       .then((raw) => {
         if (cancelled || !raw) return;
         try {
-          const parsed = JSON.parse(raw) as FriendPayment[];
+          const parsed = JSON.parse(raw) as Payment[];
           if (Array.isArray(parsed)) setPaymentsState(parsed);
         } catch {
           // Swallow corrupt data
@@ -121,20 +103,21 @@ export function PaymentsProvider({
     };
   }, []);
 
-  const addFriendPayment = useCallback<
-    PaymentsContextValue['addFriendPayment']
+  const addPayment = useCallback<
+    PaymentsContextValue['addPayment']
   >(async (input) => {
-    const payment: FriendPayment = {
+    const payment: Payment = {
       id: makeId(),
       amountPaise: input.amountPaise,
-      payeeName: input.payeeName.trim() || 'Friend',
+      payeeName: input.payeeName.trim() || 'Unknown',
       payeeVpa: null,
-      label: null,
-      category: 'Other',
-      status: INITIAL_STATUS,
-      source: 'friend',
-      createdAt: Date.now(),
-      confirmedAt: null,
+      label: input.label,
+      category: input.category,
+      status: 'success',
+      source: input.source,
+      reviewed: input.reviewed,
+      createdAt: input.createdAt.getTime(),
+      paidAt: null, // manual entries don't have paidAt yet
       upiRef: null,
     };
     const newPayments = [payment, ...payments];
@@ -143,31 +126,39 @@ export function PaymentsProvider({
     return payment;
   }, [payments]);
 
-  const addQrPayment = useCallback<
-    PaymentsContextValue['addQrPayment']
-  >(async (input) => {
-    const payment: FriendPayment = {
-      id: makeId(),
-      amountPaise: input.amountPaise,
-      payeeName: input.payeeName,
-      payeeVpa: input.payeeVpa,
-      label: input.label,
-      category: 'Other',
-      status: INITIAL_STATUS,
-      source: 'qr',
-      createdAt: Date.now(),
-      confirmedAt: null,
-      upiRef: null,
-    };
-    const newPayments = [payment, ...payments];
-    setPaymentsState((prev) => [payment, ...prev]);
-    await persist([payment, ...payments]);
-    return payment;
+  const updatePayment = useCallback<
+    PaymentsContextValue['updatePayment']
+  >(async (id, updates) => {
+    // Create a new array with the updated payment
+    // We need to ensure the updates are compatible with the Payment type
+    const updatedPayments = payments.map((p) => {
+      if (p.id === id) {
+        // Create updated payment by merging existing payment with updates
+        // Only include properties that exist on Payment interface
+        const updatedPayment: Payment = {
+          ...p,
+          // Only update fields that are present in updates
+          ...(updates.amountPaise !== undefined && { amountPaise: updates.amountPaise }),
+          ...(updates.payeeName !== undefined && { payeeName: updates.payeeName }),
+          ...(updates.label !== undefined && { label: updates.label }),
+          ...(updates.category !== undefined && { category: updates.category }),
+          ...(updates.createdAt !== undefined && { 
+            createdAt: updates.createdAt instanceof Date ? updates.createdAt.getTime() : updates.createdAt
+          }),
+          ...(updates.source !== undefined && { source: updates.source }),
+          ...(updates.reviewed !== undefined && { reviewed: updates.reviewed }),
+        };
+        return updatedPayment;
+      }
+      return p;
+    });
+    setPaymentsState(updatedPayments);
+    await persist(updatedPayments);
   }, [payments]);
 
   const value = useMemo<PaymentsContextValue>(
-    () => ({ payments, addFriendPayment, addQrPayment }),
-    [payments, addFriendPayment, addQrPayment],
+    () => ({ payments, addPayment, updatePayment }),
+    [payments, addPayment, updatePayment],
   );
 
   return (
@@ -182,3 +173,4 @@ export function usePayments(): PaymentsContextValue {
   }
   return ctx;
 }
+

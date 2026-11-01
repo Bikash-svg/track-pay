@@ -1,21 +1,23 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTheme } from './useTheme';
 
 interface ChipProps {
   readonly children: React.ReactNode;
   readonly style?: StyleProp<ViewStyle>;
+  readonly selected?: boolean;
+  readonly onPress?: () => void;
 }
 
-export function Chip({ children, style }: ChipProps) {
+export function Chip({ children, style, selected, onPress }: ChipProps) {
   const { tokens } = useTheme();
-  return (
+  const content = (
     <View
       style={[
         {
           backgroundColor: tokens.interactive,
-          borderColor: tokens.border,
+          borderColor: selected ? tokens.primary : tokens.border,
           borderWidth: 1,
           borderRadius: 999,
           paddingHorizontal: 8,
@@ -27,7 +29,22 @@ export function Chip({ children, style }: ChipProps) {
         style,
       ]}
     >
-      <Text>{children}</Text>
+      <Text style={{ color: selected ? tokens.primary : tokens.text }}>
+        {children}
+      </Text>
     </View>
+  );
+
+  if (onPress === undefined) return content;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}
+    >
+      {content}
+    </Pressable>
   );
 }

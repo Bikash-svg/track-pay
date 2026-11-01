@@ -13,6 +13,7 @@ import { computeMonthStats } from '../../src/domain/monthStats';
 import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
 import { usePayments } from '../../src/data/payments';
+import { PaymentFormDialog } from '../../src/ui/PaymentFormDialog';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -43,7 +44,8 @@ export default function HomeScreen() {
   const [limit, setLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
-  const { payments } = usePayments();
+  const { payments, updatePayment } = usePayments();
+  const { open, close } = useDialog();
   const now = new Date();
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
@@ -91,9 +93,16 @@ export default function HomeScreen() {
               // Done-when "tapping a row opens Edit" is Step 4.8's; dev-gated
               // no-op today, no onPress in a release build.
               __DEV__
-                ? () => {
-                    console.warn('[3.5 dev] Row tap — Edit ships in Phase 4.8');
-                  }
+                ? () => open({
+                    children: (
+                      <PaymentFormDialog
+                        mode="edit"
+                        initial={p}
+                        onSaved={async (input) => { await updatePayment(p.id, input); close(); }}
+                        onCancel={close}
+                      />
+                    ),
+                  })
                 : undefined
             }
           />
@@ -166,6 +175,7 @@ function DevSection({
   onSetPendingCount: (n: number) => void;
 }) {
   const { open, close } = useDialog();
+  const { addPayment } = usePayments();
   const { theme, effectiveTheme, setTheme } = useTheme();
 
   return (
@@ -173,6 +183,22 @@ function DevSection({
       <Text variant="muted">Dev: spent {spent} · limit {limit ?? 'null'}</Text>
       <Text variant="muted">Pending (dev): {pendingCount}</Text>
       <Text variant="muted">Payments (dev): {devPaymentCount}</Text>
+      <Button
+        accessibilityLabel="Add payment (dev)"
+        onPress={() =>
+          open({
+            children: (
+              <PaymentFormDialog
+                mode="add"
+                onSaved={async (input) => { await addPayment(input); close(); }}
+                onCancel={close}
+              />
+            ),
+          })
+        }
+      >
+        Add payment (dev)
+      </Button>
       {DEV_PAYMENT_PRESETS.map((preset) => (
         <Button
           key={preset.label}
