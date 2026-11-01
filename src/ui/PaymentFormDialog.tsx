@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Field } from './Field';
 import { AmountField } from './AmountField';
 import { Button } from './Button';
@@ -80,6 +81,9 @@ export function PaymentFormDialog({ mode, initial, onSaved, onCancel }: PaymentF
     }
     return formatDateForInput(new Date());
   });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [pickerDate, setPickerDate] = useState(() => parseDateFromInput(dateInput));
   
   const [amountError, setAmountError] = useState('');
   const [payeeError, setPayeeError] = useState('');
@@ -151,8 +155,27 @@ export function PaymentFormDialog({ mode, initial, onSaved, onCancel }: PaymentF
     onSaved,
   ]);
   
-  const handleDateInputChange = (text: string) => {
-    setDateInput(text);
+  const openDatePicker = () => {
+    setPickerDate(parseDateFromInput(dateInput));
+    setShowDatePicker(true);
+  };
+
+  const onDateChange = (event: DateTimePickerEvent, picked?: Date) => {
+    setShowDatePicker(false);
+    if (event.type !== 'set' || !picked) return;
+    const merged = new Date(pickerDate);
+    merged.setFullYear(picked.getFullYear(), picked.getMonth(), picked.getDate());
+    setPickerDate(merged);
+    setShowTimePicker(true);
+  };
+
+  const onTimeChange = (event: DateTimePickerEvent, picked?: Date) => {
+    setShowTimePicker(false);
+    if (event.type !== 'set' || !picked) return;
+    const merged = new Date(pickerDate);
+    merged.setHours(picked.getHours(), picked.getMinutes(), 0, 0);
+    setPickerDate(merged);
+    setDateInput(formatDateForInput(merged));
   };
   
   return (
@@ -200,13 +223,44 @@ export function PaymentFormDialog({ mode, initial, onSaved, onCancel }: PaymentF
       </View>
       
       <Text variant="muted" style={{ marginBottom: 8 }}>{copy.date}</Text>
-      <Field
-        label={copy.date}
-        value={dateInput}
-        onChangeText={handleDateInputChange}
-        error={dateError}
-        accessibilityLabel={copy.date}
-      />
+      <View style={{ marginBottom: 16 }}>
+        <Pressable
+          onPress={openDatePicker}
+          accessibilityRole="button"
+          accessibilityLabel={`${copy.date}: ${dateInput}. Tap to change.`}
+          style={{
+            minHeight: 44,
+            justifyContent: 'center',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderWidth: 1,
+            borderColor: tokens.border,
+            borderRadius: 8,
+            backgroundColor: tokens.interactive,
+          }}
+        >
+          <Text variant="secondary">{copy.date}</Text>
+          <Text>{dateInput}</Text>
+        </Pressable>
+        {dateError && <Text variant="muted">{dateError}</Text>}
+      </View>
+      {showDatePicker && (
+        <DateTimePicker
+          value={pickerDate}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+        />
+      )}
+      {showTimePicker && (
+        <DateTimePicker
+          value={pickerDate}
+          mode="time"
+          display="default"
+          is24Hour
+          onChange={onTimeChange}
+        />
+      )}
       
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 }}>
         <Button
