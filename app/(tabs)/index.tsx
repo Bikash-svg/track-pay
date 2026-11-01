@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Button } from '../../src/ui/Button';
+import { Chip } from '../../src/ui/Chip';
 import { Field } from '../../src/ui/Field';
 import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
@@ -14,6 +16,8 @@ import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
 import { usePayments } from '../../src/data/payments';
 import { PaymentFormDialog } from '../../src/ui/PaymentFormDialog';
+import { getProfile } from '../../src/data/settings';
+import { greeting } from '../../src/domain/greeting';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -40,37 +44,64 @@ const DEV_SAMPLE_PAYMENTS = [
 ];
 
 export default function HomeScreen() {
-  const [spent, setSpent] = useState(0);
-  const [limit, setLimit] = useState<number | null>(null);
+  const [firstName, setFirstName] = useState<string | null>(null);
+  const [devSpent, setDevSpent] = useState(0);
+  const [devLimit, setDevLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
-  const { payments, updatePayment } = usePayments();
+  const { payments, addPayment, updatePayment } = usePayments();
   const { open, close } = useDialog();
   const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const spent = payments
+    .filter((payment) => payment.status === 'success' && new Date(payment.createdAt) >= monthStart)
+    .reduce((sum, payment) => sum + payment.amountPaise, 0);
+  const limit: number | null = null;
   const stats = computeMonthStats({ spent, limit, now });
   const month = now.toLocaleString('en-IN', { month: 'long' });
 
-  const recentPayments = payments.slice(0, 4);
+  useEffect(() => {
+    let mounted = true;
+    void getProfile().then((profile) => {
+      if (mounted) setFirstName(profile.firstName);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const recentPayments = payments.slice(0, 5);
   const showRealPayments = recentPayments.length > 0;
 
   return (
     <Screen padTop={false}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text>{greeting(now, firstName)}</Text>
+        <Chip>{month}</Chip>
+      </View>
       <SpendCard stats={stats} month={month} />
 
-      {/* Quick actions (DESIGN.md §1 item 2) */}
-      {/* deleted the <view> block */}
+      <Button variant="primary" disabled accessibilityLabel="Add from screenshot — coming soon">
+        {copy.addFromScreenshot}
+      </Button>
+      <Button
+        variant="secondary"
+        onPress={() => open({
+          children: (
+            <PaymentFormDialog
+              mode="add"
+              onSaved={async (input) => { await addPayment(input); close(); }}
+              onCancel={close}
+            />
+          ),
+        })}
+      >
+        {copy.addManually}
+      </Button>
+      <Text variant="muted">{copy.shareHint}</Text>
 
-      {/* Pay button — purpose undecided (new BUILD-TODO open question #12) */}
-      {/* BUILD-TODO open question #12 — Pay button purpose undecided. Disabled until Phase 4 defines its flow. */}
-      
+      {/* This month at a glance slot — Step 5.9 */}
 
-      {/* Add payment already made (DESIGN.md §1 item 3) */}
-      
-
-      {/* Banner (DESIGN.md §1 item 4) — moved from 3.3's temporary spot */}
-      
-
-      {/* Recent Payments (DESIGN.md §1 item 5) — after the Banner, before DevSection */}
       <Text variant="secondary">{copy.recentPayments}</Text>
       {showRealPayments ? (
         recentPayments.map((p) => (
@@ -88,6 +119,7 @@ export default function HomeScreen() {
                   : 'Pending'
             }
             date={dateLabel(new Date(p.createdAt), now)}
+            notVerified={!p.reviewed}
             accessibilityLabel={`${p.payeeName}, ${p.category}`}
             onPress={
               // Done-when "tapping a row opens Edit" is Step 4.8's; dev-gated
@@ -110,7 +142,7 @@ export default function HomeScreen() {
       ) : devPaymentCount === 0 ? (
         <Text variant="muted">{copy.noPayments}</Text>
       ) : (
-        DEV_SAMPLE_PAYMENTS.slice(0, Math.min(devPaymentCount, 4)).map((p, i) => {
+        DEV_SAMPLE_PAYMENTS.slice(0, Math.min(devPaymentCount, 5)).map((p, i) => {
           const rowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - p.daysAgo);
           return (
             <PayRow
@@ -135,16 +167,16 @@ export default function HomeScreen() {
           );
         })
       )}
-      <Button variant="text" onPress={() => router.push('/history')} accessibilityLabel={copy.seeAll}>
-        {copy.seeAll}
+      <Button variant="text" onPress={() => router.push('/history')} accessibilityLabel={copy.history}>
+        {copy.history}
       </Button>
 
       {__DEV__ && (
         <DevSection
-          spent={spent}
-          limit={limit}
-          onSetSpent={setSpent}
-          onSetLimit={setLimit}
+          spent={devSpent}
+          limit={devLimit}
+          onSetSpent={setDevSpent}
+          onSetLimit={setDevLimit}
           pendingCount={pendingCount}
           onSetPendingCount={setPendingCount}
           devPaymentCount={devPaymentCount}

@@ -10,12 +10,16 @@ export const copy = {
   dailyAverage: (amount: string) => `${amount} a day on average`,
   // 4-B.7 batch result: "Review" button for the saved payments.
   review: 'Review',
-  seeAll: 'See all',
+  history: 'History',
+  addFromScreenshot: 'Add from screenshot',
+  addManually: 'Add manually',
+  shareHint: 'Pay in any UPI app, then share the success screenshot here.',
+  basedOnPayments: 'Based on payments recorded in Track Pay',
   // NOTE (4-B.0): stale string — mentions "Scan a QR" which is retired.
   // Home is rebuilt in 4-B.4 and the new empty state per COPY.md is
   // "No payments yet. Share a payment screenshot or add one by hand."
   // Kept as-is for 4-B.0 (item 9 does not name it). Fix in 4-B.4.
-  noPayments: 'No payments yet. Scan a QR or add one.',
+  noPayments: 'No payments yet. Share a payment screenshot or add one by hand.',
   recentPayments: 'Recent Payments',
   today: 'Today',
   done: 'Done',

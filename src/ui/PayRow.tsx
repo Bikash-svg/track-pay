@@ -15,6 +15,7 @@ interface PayRowProps {
   readonly status: PayRowStatus;
   readonly date: string;
   readonly category?: string;
+  readonly notVerified?: boolean;
   readonly onPress?: () => void;
   readonly accessibilityLabel?: string;
   readonly style?: ViewStyle;
@@ -27,6 +28,7 @@ export function PayRow({
   status,
   date,
   category,
+  notVerified = false,
   onPress,
   accessibilityLabel,
   style,
@@ -58,6 +60,7 @@ export function PayRow({
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 14 }}>{name}</Text>
+        {notVerified ? <Text variant="muted">Not verified</Text> : null}
       </View>
 <View style={{ alignItems: 'flex-end' }}>
         <Text>

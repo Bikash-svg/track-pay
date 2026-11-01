@@ -1,4 +1,7 @@
-// Home spend card (3.2). Renders 'Spend on {Month}' + amount always. When limit=null, nothing else shows (DESIGN.md §1: 'Without a limit only the label and amount show'). When limit is set: limit text, progress bar (fill colour per A6 via barColour), one of overBy/xLeft/leftPerDay, then daily average.
+// Home spend card (3.2). Renders 'Spend on {Month}' + amount + the privacy
+// footnote always. When limit=null, no limit-dependent UI shows. When limit is
+// set: limit text, progress bar (fill colour per A6 via barColour), and one of
+// overBy/xLeft/leftPerDay.
 // Bar width clamps to 100% so the over-limit case doesn't overflow visually.
 // Inline barHeight=4 is a Track A compromise — Track B D1.2 migrates inline sizes to tokens.
 // No animation (Track A D12).
@@ -27,6 +30,7 @@ export function SpendCard({ stats, month }: SpendCardProps) {
       <Card>
         <Text>{copy.spendOn(month)}</Text>
         <Money paise={stats.spent} />
+        <Text variant="muted">{copy.basedOnPayments}</Text>
       </Card>
     );
   }
@@ -60,7 +64,7 @@ export function SpendCard({ stats, month }: SpendCardProps) {
       ) : (
         <Text>{copy.leftPerDay(formatMoney(left), formatMoney(allowancePerDay), stats.daysRemaining)}</Text>
       )}
-      <Text variant="muted">{copy.dailyAverage(formatMoney(stats.dailyAverage))}</Text>
+      <Text variant="muted">{copy.basedOnPayments}</Text>
     </Card>
   );
 }
