@@ -28,6 +28,18 @@ export const copy = {
   save: 'Save',
   saveChanges: 'Save changes',
   deletePayment: 'Delete payment',
+  undo: 'Undo',
+  close: 'Close',
+  paymentAdded: 'Payment added',
+  looksRight: 'Looks right',
+  alreadyAdded: 'This payment is already in Track Pay.',
+  couldntRead: "Couldn't read this screenshot. Nothing was saved.",
+  notSuccessful:
+    'This screenshot shows a payment that did not go through. Nothing was saved.',
+  enterManually: 'Enter manually',
+  to: 'To',
+  checkThese:
+    'Check these against your payment. They were read from your screenshot.',
   enterAmountGreaterThanZero: 'Enter an amount greater than ₹0',
   useAtMostTwoDecimals: 'Use at most 2 decimal places',
   thatAmountIsTooLarge: 'That amount is too large',

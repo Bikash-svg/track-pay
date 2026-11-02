@@ -38,6 +38,8 @@ export type PaymentInput = {
   label: string | null;      // note
   category: PaymentCategory; // 'Food'|'Shopping'|'Bills'|'Transport'|'Other'
   createdAt: Date;           // user-chosen date/time; NOT the wall-clock moment
+  readonly paidAt?: Date | null;
+  readonly upiRef?: string | null;
   source: 'manual' | 'receipt';
   reviewed: boolean;
 };
@@ -46,6 +48,7 @@ interface PaymentsContextValue {
   readonly payments: readonly Payment[];
   readonly addPayment: (input: PaymentInput) => Promise<Payment>;
   readonly updatePayment: (id: string, updates: Partial<PaymentInput>) => Promise<void>;
+  readonly deletePayment: (id: string) => Promise<void>;
 }
 
 const PaymentsContext = createContext<PaymentsContextValue | undefined>(
@@ -117,8 +120,8 @@ export function PaymentsProvider({
       source: input.source,
       reviewed: input.reviewed,
       createdAt: input.createdAt.getTime(),
-      paidAt: null, // manual entries don't have paidAt yet
-      upiRef: null,
+      paidAt: input.paidAt ? input.paidAt.getTime() : null,
+      upiRef: input.upiRef ?? null,
     };
     const newPayments = [payment, ...payments];
     setPaymentsState((prev) => [payment, ...prev]);
@@ -156,9 +159,17 @@ export function PaymentsProvider({
     await persist(updatedPayments);
   }, [payments]);
 
+  const deletePayment = useCallback<
+    PaymentsContextValue['deletePayment']
+  >(async (id) => {
+    const updated = payments.filter((p) => p.id !== id);
+    setPaymentsState(updated);
+    await persist(updated);
+  }, [payments]);
+
   const value = useMemo<PaymentsContextValue>(
-    () => ({ payments, addPayment, updatePayment }),
-    [payments, addPayment, updatePayment],
+    () => ({ payments, addPayment, updatePayment, deletePayment }),
+    [payments, addPayment, updatePayment, deletePayment],
   );
 
   return (

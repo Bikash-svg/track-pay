@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
-import { Stack, usePathname, useRouter } from 'expo-router';
-import { useShareIntent, ShareIntentProvider } from 'expo-share-intent';
+import { useEffect, useRef } from 'react';
+import { Stack, useRouter } from 'expo-router';
+import { ShareIntentProvider } from 'expo-share-intent';
 import * as SplashScreen from 'expo-splash-screen';
+import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DialogProvider } from '../src/ui/DialogProvider';
 import { ThemeProvider } from '../src/ui/useTheme';
@@ -12,21 +13,60 @@ import '../src/notifications/spike';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function ShareIntentWatcher() {
-  const { hasShareIntent, shareIntent } = useShareIntent();
   const router = useRouter();
-  const pathname = usePathname();
+  const lastFp = useRef<string | null>(null);
 
   useEffect(() => {
-    if (
-      hasShareIntent &&
-      shareIntent?.files &&
-      shareIntent.files.length > 0 &&
-      pathname !== '/share-receipt'
-    ) {
-      const t = setTimeout(() => router.replace('/share-receipt'), 50);
-      return () => clearTimeout(t);
-    }
-  }, [hasShareIntent, shareIntent, pathname, router]);
+    let cancelled = false;
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const cacheDir = FileSystem.cacheDirectory;
+          if (cacheDir) {
+            const files = await FileSystem.readDirectoryAsync(cacheDir);
+            const now = Date.now() / 1000;
+            for (const f of files) {
+              const lower = f.toLowerCase();
+              if (
+                !lower.endsWith('.jpg') &&
+                !lower.endsWith('.jpeg') &&
+                !lower.endsWith('.png')
+              ) {
+                continue;
+              }
+              const fp = `${cacheDir}${f}`;
+              if (fp === lastFp.current) continue;
+              const info = await FileSystem.getInfoAsync(fp);
+              if (
+                info.exists &&
+                !info.isDirectory &&
+                info.modificationTime &&
+                now - info.modificationTime < 30
+              ) {
+                lastFp.current = fp;
+                setTimeout(() => {
+                  if (!cancelled) {
+                    router.replace({
+                      pathname: '/share-receipt',
+                      params: { fp },
+                    });
+                  }
+                }, 50);
+                break;
+              }
+            }
+          }
+        } catch {
+          // cache read failed — try again next tick
+        }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    };
+    poll();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   return null;
 }

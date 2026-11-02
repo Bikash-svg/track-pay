@@ -21,15 +21,22 @@ function renderWithSeed(seed: Payment[]) {
     addFriend: (i: PaymentInput) => Promise<Payment>;
     addQr: (i: PaymentInput) => Promise<Payment>;
     updatePayment: (id: string, updates: Partial<PaymentInput>) => Promise<void>;
+    deletePayment: (id: string) => Promise<void>;
   } = {
     addFriend: async () => ({} as Payment),
     addQr: async () => ({} as Payment),
     updatePayment: async () => {},
+    deletePayment: async () => {},
   };
   function Probe() {
     const ctx = usePayments();
     observed = ctx.payments as Payment[];
-    captured = { addFriend: ctx.addPayment, addQr: ctx.addPayment, updatePayment: ctx.updatePayment };
+    captured = {
+      addFriend: ctx.addPayment,
+      addQr: ctx.addPayment,
+      updatePayment: ctx.updatePayment,
+      deletePayment: ctx.deletePayment,
+    };
     return null;
   }
   let root: any;
@@ -40,7 +47,7 @@ function renderWithSeed(seed: Payment[]) {
       </PaymentsProvider>
     );
   });
-  return { root, get observed() { return observed; }, get addFriend() { return captured.addFriend; }, get addQr() { return captured.addQr; }, get updatePayment() { return captured.updatePayment; } };
+  return { root, get observed() { return observed; }, get addFriend() { return captured.addFriend; }, get addQr() { return captured.addQr; }, get updatePayment() { return captured.updatePayment; }, get deletePayment() { return captured.deletePayment; } };
 }
 
 describe('payments store (AsyncStorage-backed, Step 4.3)', () => {
@@ -89,6 +96,71 @@ describe('payments store (AsyncStorage-backed, Step 4.3)', () => {
     expect(result!.reviewed).toBe(false);
   });
 
+  it('addPayment with paidAt persists the Date as a timestamp number', async () => {
+    const probe = renderWithSeed([]);
+    const paidAt = new Date(2026, 9, 15, 14, 30);
+    let result: Payment;
+    await act(async () => {
+      result = await probe.addFriend({
+        amountPaise: 12000,
+        payeeName: 'Test',
+        label: null,
+        category: 'Food',
+        createdAt: paidAt,
+        paidAt,
+        source: 'receipt',
+        reviewed: false,
+      });
+    });
+    expect(result!.paidAt).toBe(paidAt.getTime());
+    const stored = (AsyncStorage.setItem as jest.Mock).mock.calls[0][1];
+    expect((JSON.parse(stored) as Payment[])[0].paidAt).toBe(paidAt.getTime());
+    await act(async () => {
+      probe.root.unmount();
+    });
+    const rehydrated = renderWithSeed([]);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(rehydrated.observed[0].paidAt).toBe(paidAt.getTime());
+  });
+
+  it('addPayment with upiRef persists the string', async () => {
+    const probe = renderWithSeed([]);
+    let result: Payment;
+    await act(async () => {
+      result = await probe.addFriend({
+        amountPaise: 12000,
+        payeeName: 'Test',
+        label: null,
+        category: 'Food',
+        createdAt: new Date(),
+        upiRef: 'T1234567890123456789',
+        source: 'receipt',
+        reviewed: false,
+      });
+    });
+    expect(result!.upiRef).toBe('T1234567890123456789');
+  });
+
+  it('addPayment without paidAt or upiRef defaults both to null', async () => {
+    const probe = renderWithSeed([]);
+    let result: Payment;
+    await act(async () => {
+      result = await probe.addFriend({
+        amountPaise: 12000,
+        payeeName: 'Test',
+        label: null,
+        category: 'Food',
+        createdAt: new Date(),
+        source: 'manual',
+        reviewed: true,
+      });
+    });
+    expect(result!.paidAt).toBeNull();
+    expect(result!.upiRef).toBeNull();
+  });
+
   it('updatePayment changes specified fields only', async () => {
     const initialPayment: Payment = {
       id: 'test-id',
@@ -124,6 +196,27 @@ describe('payments store (AsyncStorage-backed, Step 4.3)', () => {
       updateResult = await probe.updatePayment('non-existent-id', { payeeName: 'New' });
     });
     expect(probe.observed.length).toBe(0);
+  });
+
+  it('deletePayment removes the payment from state and AsyncStorage', async () => {
+    const first: Payment = {
+      id: 'payment-1', amountPaise: 100, payeeName: 'Test One', payeeVpa: null,
+      label: null, category: 'Food', status: 'success', source: 'manual', reviewed: true,
+      createdAt: 1, paidAt: null, upiRef: null,
+    };
+    const second: Payment = {
+      ...first, id: 'payment-2', payeeName: 'Test Two', createdAt: 2,
+    };
+    const probe = renderWithSeed([first, second]);
+
+    await act(async () => {
+      await probe.deletePayment(first.id);
+    });
+
+    expect(probe.observed).toEqual([second]);
+    expect(AsyncStorage.setItem).toHaveBeenCalled();
+    const stored = (AsyncStorage.setItem as jest.Mock).mock.calls[0][1];
+    expect(JSON.parse(stored)).toEqual([second]);
   });
 
   it('addPayment writes to AsyncStorage', async () => {

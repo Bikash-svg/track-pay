@@ -118,7 +118,7 @@ export default function HomeScreen() {
                   ? 'Failed'
                   : 'Pending'
             }
-            date={dateLabel(new Date(p.createdAt), now)}
+            date={dateLabel(new Date(p.paidAt ?? p.createdAt), now)}
             notVerified={!p.reviewed}
             accessibilityLabel={`${p.payeeName}, ${p.category}`}
             onPress={
