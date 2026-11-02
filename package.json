@@ -10,7 +10,6 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest --watchAll=false",
-    "postinstall": "patch-package",
     "lint:guardrails": "node scripts/check-guardrails.js",
     "check": "expo install --check && tsc --noEmit && npm run lint:guardrails && npm test -- --ci",
     "verify:state": "git --no-pager log --oneline -2 && git --no-pager status && wc -l BUILD-TODO.md && grep -n 'Current step, Track A' BUILD-TODO.md",
@@ -56,7 +55,6 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
-    "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
   "overrides": {
