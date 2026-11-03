@@ -119,23 +119,98 @@ function isAmbiguousSevenRupee(text: string): boolean {
   return amountPart.startsWith('7') && !amountPart.includes('.') && numericValue < 10000;
 }
 
-function extractAmounts(text: string): number[] {
-  const amounts: number[] = [];
+function extractRupeePrefixAmounts(text: string): { paise: number; rawText: string }[] {
+  const amounts: { paise: number; rawText: string }[] = [];
   const lines = text.split('\n');
   for (const line of lines) {
     const matches = line.match(/(?:₹|Rs\.|INR)\s*([^.\s]*\.\s*\d+)/gi);
     if (!matches) continue;
     for (const match of matches) {
       const amountStr = match.replace(/(?:₹|Rs\.|INR)\s*/i, '');
-      const normalized = normalizeAmountString(amountStr);
-      const parseResult = parseAmount(normalized);
-      if ('paise' in parseResult) amounts.push(parseResult.paise);
+      const parseResult = parseAmount(normalizeAmountString(amountStr));
+      if ('paise' in parseResult) amounts.push({ paise: parseResult.paise, rawText: match });
     }
   }
   return amounts;
 }
 
-function extractPayee(text: string): string {
+function isWithinField(text: string, start: number, end: number): boolean {
+  const fieldPatterns = [
+    /(Paid to|Received from|To:|Sent to)\s*.+/gi,
+    /\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}(?:,\s+\d{1,2}:\d{2}\s+(?:AM|PM))?/gi,
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b/gi,
+    /\b\d{1,2}[\s/-]\d{1,2}[\s/-]\d{4}\b/g,
+  ];
+  return fieldPatterns.some(pattern =>
+    Array.from(text.matchAll(pattern)).some(match =>
+      match.index !== undefined && start >= match.index && end <= match.index + match[0].length,
+    ),
+  );
+}
+
+function findLabelAdjacentAmount(text: string): { paise: number; rawText: string } | null {
+  const lines = text.split('\n');
+  const lineStarts: number[] = [];
+  let offset = 0;
+  for (const line of lines) {
+    lineStarts.push(offset);
+    offset += line.length + 1;
+  }
+
+  const labels = Array.from(text.matchAll(/Paid to|Sent to|Received from|Amount|Paid/gi));
+  const candidates: { paise: number; rawText: string }[] = [];
+  const numberPattern = /\d+(?:[.,]\d{1,2})?/g;
+  for (const match of text.matchAll(numberPattern)) {
+    if (match.index === undefined) continue;
+    const start = match.index;
+    const rawText = match[0];
+    const end = start + rawText.length;
+    const before = text[start - 1] ?? '';
+    const after = text[end] ?? '';
+    const isAlphanumeric = /[A-Za-z]/.test(before) || /[A-Za-z]/.test(after);
+    const isLongReference = /^\d{13,}$/.test(rawText);
+    const isYear = /^20(?:2\d|3\d)$/.test(rawText);
+    const isTime = Array.from(text.matchAll(/\b\d{1,2}:\d{2}(?:\s*(?:AM|PM))?\b/gi)).some(time =>
+      time.index !== undefined && start >= time.index && end <= time.index + time[0].length,
+    );
+    const isPhone = /(?:\+91|91)\d{8,}$/.test(text.slice(Math.max(0, start - 3), end));
+    if (isAlphanumeric || isLongReference || isYear || isTime || isPhone || isWithinField(text, start, end)) continue;
+
+    const lineIndex = lineStarts.findIndex((lineStart, index) => {
+      const nextLineStart = lineStarts[index + 1] ?? text.length + 1;
+      return start >= lineStart && start < nextLineStart;
+    });
+    const hasNearbyLabel = labels.some(label => {
+      if (label.index === undefined) return false;
+      const labelLineIndex = lineStarts.findIndex((lineStart, index) => {
+        const nextLineStart = lineStarts[index + 1] ?? text.length + 1;
+        return label.index >= lineStart && label.index < nextLineStart;
+      });
+      return Math.abs(lineIndex - labelLineIndex) <= 1 && Math.abs(start - label.index) <= 60;
+    });
+    if (!hasNearbyLabel) continue;
+
+    const parseResult = parseAmount(normalizeAmountString(rawText));
+    if ('paise' in parseResult) candidates.push({ paise: parseResult.paise, rawText });
+  }
+
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
+export function detectAmountPaise(text: string): number | null {
+  const prefixAmounts = extractRupeePrefixAmounts(text);
+  const uniquePrefixAmounts = [...new Map(prefixAmounts.map(amount => [amount.paise, amount])).values()];
+  if (uniquePrefixAmounts.length === 1) {
+    return isAmbiguousSevenRupee(uniquePrefixAmounts[0].rawText) ? null : uniquePrefixAmounts[0].paise;
+  }
+  if (uniquePrefixAmounts.length > 1) return null;
+
+  const fallbackAmount = findLabelAdjacentAmount(text);
+  if (!fallbackAmount || isAmbiguousSevenRupee(fallbackAmount.rawText)) return null;
+  return fallbackAmount.paise;
+}
+
+export function detectPayee(text: string): string {
   const lines = text.split('\n');
   const payeePatterns = [
     /(Paid to|Received from|To:|Sent to)\s*(.+)/i,
@@ -153,7 +228,7 @@ function extractPayee(text: string): string {
   return 'Unknown';
 }
 
-function extractUpiRef(text: string): string | null {
+export function detectUpiRef(text: string): string | null {
   const lines = text.split('\n');
   for (const line of lines) {
     const match = line.match(/:\s*([A-Za-z0-9]+)$/i);
@@ -171,7 +246,7 @@ function extractApp(text: string): App {
   return 'unknown';
 }
 
-function extractDate(text: string): Date | null {
+export function detectPaidAt(text: string, _referenceDate: Date): Date | null {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
   // Pattern for "DD Mon YYYY, HH:MM AM/PM"
@@ -260,18 +335,12 @@ export function parseReceipt(ocrText: string, referenceDate: Date): ParsedReceip
   
   if (containsPending(ocrText)) return { reason: 'pending' };
   
-  const amounts = extractAmounts(ocrText);
-  const uniqueAmounts = [...new Set(amounts)];
-  if (uniqueAmounts.length === 0) return { reason: 'no_amount' };
-  if (uniqueAmounts.length > 1) return { reason: 'no_amount' };
-  
-  const rawTextForSevenCheck = ocrText.match(/(?:₹|Rs\.|INR)\s*\d+(?:,\d+)*(?:\.\d+)?/i)?.[0] || '';
-  if (isAmbiguousSevenRupee(rawTextForSevenCheck)) return { reason: 'no_amount' };
-  
-  const amount = uniqueAmounts[0];
-  const payee = extractPayee(ocrText);
-  const upiRef = extractUpiRef(ocrText);
-  const paidAt = extractDate(ocrText);
+  const amount = detectAmountPaise(ocrText);
+  if (amount === null) return { reason: 'no_amount' };
+
+  const payee = detectPayee(ocrText);
+  const upiRef = detectUpiRef(ocrText);
+  const paidAt = detectPaidAt(ocrText, referenceDate);
   const app = extractApp(ocrText);
   
   return {

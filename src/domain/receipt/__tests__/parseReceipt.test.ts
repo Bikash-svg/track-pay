@@ -1,4 +1,4 @@
-import { parseReceipt } from '../parseReceipt';
+import { detectAmountPaise, parseReceipt } from '../parseReceipt';
 
 // EVALS U1-U9 coverage with synthetic fixtures per GUARDRAILS §13.8
 // Every sample is synthetic - no real payment data
@@ -284,5 +284,63 @@ Paid to Test User
       upiRef: null,
       app: 'gpay',
     });
+  });
+
+  it('label-adjacency: Paid to X then 1.00 detects 100 paise', () => {
+    expect(detectAmountPaise('Paid to X\n1.00')).toBe(100);
+  });
+
+  it('label-adjacency: Received from then Amount 500 parses to 50000 paise', () => {
+    const result = parseReceipt(`PhonePe
+Received from Test User
+Amount: 500
+15 Oct 2026
+UPI Ref: T0000000000000000000000` , REF_DATE);
+    expect(result).toMatchObject({ amountPaise: 50000 });
+  });
+
+  it('label-adjacency: Sent to then 100.50 parses to 10050 paise', () => {
+    const result = parseReceipt(`PhonePe
+Sent to Test User
+100.50
+15 Oct 2026
+UPI Ref: T0000000000000000000000`, REF_DATE);
+    expect(result).toMatchObject({ amountPaise: 10050 });
+  });
+
+  it('label-adjacency: number with no nearby label returns no amount', () => {
+    expect(detectAmountPaise('1.00')).toBeNull();
+  });
+
+  it('label-adjacency: two numbers near labels return no amount', () => {
+    expect(detectAmountPaise('Paid to Test User\n100\nAmount: 200')).toBeNull();
+  });
+
+  it('label-adjacency: excludes a UTR reference', () => {
+    expect(detectAmountPaise('Amount: T0000000000000')).toBeNull();
+  });
+
+  it('label-adjacency: excludes a year', () => {
+    expect(detectAmountPaise('Amount: 2025')).toBeNull();
+  });
+
+  it('label-adjacency: excludes a time', () => {
+    expect(detectAmountPaise('Amount: 14:30')).toBeNull();
+  });
+
+  it('label-adjacency: excludes a phone number', () => {
+    expect(detectAmountPaise('Amount: +911234567890')).toBeNull();
+  });
+
+  it('label-adjacency: R6 ambiguity rejects 7100', () => {
+    expect(detectAmountPaise('Paid to Test User\n7100')).toBeNull();
+  });
+
+  it('label-adjacency: ₹100 without a decimal parses to 10000 paise', () => {
+    expect(detectAmountPaise('Paid to Test User\n₹100')).toBe(10000);
+  });
+
+  it('label-adjacency: 100 without a prefix parses to 10000 paise', () => {
+    expect(detectAmountPaise('Paid to Test User\n100')).toBe(10000);
   });
 });
