@@ -42,3 +42,7 @@ app-example
 /ios
 /android
 .envrc
+
+# ONNX model artifacts (binary, regenerable, ~134 MB)
+assets/models/*.onnx
+assets/models/character_dict.json
