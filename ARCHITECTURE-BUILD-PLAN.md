@@ -218,6 +218,11 @@ Runs first. Deletes the old payment-launcher code and nothing else.
   The route never stores the image and never logs the text or the fields. Posting the receipt notification is Step 8.2; this step shows the result page only. A dev button "Paste OCR text" may stay behind `__DEV__`.
 - **Done when:** EVALS D10 and D11 pass for GPay, PhonePe, Paytm and Navi on a real phone; a failed screenshot saves nothing; a duplicate saves nothing; airplane mode works; `adb logcat` shows no payment data.
 
+#### Step 4-B.5c: Replace ML Kit with PaddleOCR
+
+- **Build:** Replace `rn-mlkit-ocr` with `ppu-paddle-ocr` (ONNX Runtime-based PaddleOCR, pre-built npm package — GUARDRAILS §8.3 no amendment). Bundle PP-OCRv6_medium_det.onnx (~62MB) + PP-OCRv6_medium_rec.onnx (~76MB) + character_dict.json (~129KB, 18708 chars) in `assets/models/` (gitignored). **Reference implementation:** `docs/paddleocr-reference/baseline_hybrid.py` (Python, 527 lines, validated 42/44 amount accuracy across 44 screenshots; the source of truth for all parser logic). New line-based parser in `src/domain/receipt/extractFromLines.ts` + 6 sub-extractors (`extractAmount`, `extractDirection`, `extractCounterparty`, `extractDateTime`, `extractApp`, `extractStatus`) replaces `parseReceipt.ts` and `parseDiagnostics.ts`. Full-image OCR, NO crop, NO upscale. B&W fallback via `expo-image-manipulator` toGreyscale only when `no_amount`. Eager OCR init in `_layout.tsx`. Parity test: 44 fixtures in `assets/test-screenshots/` (gitignored) → ≥42/44 amount, 44/44 date/time/direction/counterparty/app/status. Fixtures never committed (§13.8).
+- **Done when:** parity thresholds met; `rn-mlkit-ocr` removed; `npx tsc --noEmit` clean; `npm run lint:guardrails` pass; `npm test` pass; device verify GPay + PhonePe + Navi save ₹1 correctly.
+
 #### Step 4-B.6: Edit, delete, verify, undo
 
 - **Build:** Looks right sets `reviewed = true`. Edit opens the form (4-B.3) and saves with `reviewed = true`. Undo removes a payment saved in the last session of the result page. Delete asks first, names the payment, and offers an undo message. Reachable from Recent payments and History rows.
