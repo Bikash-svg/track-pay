@@ -9,6 +9,7 @@ import { ThemeProvider } from '../src/ui/useTheme';
 import { SplashGate } from '../src/ui/SplashGate';
 import { PaymentsProvider } from '../src/data/payments';
 import '../src/notifications/spike';
+import { getOcrService } from '../src/ocr/paddleOcr';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -72,6 +73,12 @@ function ShareIntentWatcher() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    getOcrService().catch(() => {
+      // Silent — OCR will retry on first use if eager init fails
+    });
+  }, []);
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>
