@@ -1,17 +1,22 @@
-import type { ReceiptStatus, OcrLine } from './types';
+import type { OcrLine, ReceiptDirection, ReceiptStatus } from './types';
 
-const FAILED = /failed|declined|payment unsuccessful|payment failed/i;
-const PENDING = /pending|processing/i;
-const SUCCESS = /transaction successful|successful|success/i;
-
-function isScopedMatch(lines: readonly OcrLine[], pattern: RegExp): boolean {
-  return lines.some((line, index) => index < 3 ? pattern.test(line.text) : new RegExp(`^\\s*(?:${pattern.source})\\s*$`, pattern.flags).test(line.text));
-}
-
-export function extractStatus(lines: readonly OcrLine[]): ReceiptStatus {
-  const text = lines.map((line) => line.text).join('\n');
-  if (/no\s+pending\s+transactions/i.test(text)) return 'success';
-  if (isScopedMatch(lines, FAILED)) return 'failed';
-  if (isScopedMatch(lines, PENDING)) return SUCCESS.test(text) ? 'success' : 'pending';
+export function extractStatus(
+  lines: readonly OcrLine[],
+  direction: ReceiptDirection,
+): ReceiptStatus {
+  const text = lines.map((line) => line.text).join(' ').toLowerCase();
+  for (const kw of ['failed', 'failure', 'declined', 'unsuccessful', 'cancelled', 'canceled']) {
+    if (text.includes(kw)) return 'failed';
+  }
+  for (const kw of ['pending', 'processing', 'in progress']) {
+    if (text.includes(kw)) return 'pending';
+  }
+  for (const kw of ['successful', 'success', 'completed', 'payment done']) {
+    if (text.includes(kw)) return 'success';
+  }
+  if (text.includes('paid with fam')) return 'success';
+  if (direction === 'debit' || direction === 'credit' || direction === 'self_transfer') {
+    return 'success';
+  }
   return 'unknown';
 }

@@ -1,4 +1,9 @@
-import type { ParsedReceipt } from './parseReceipt';
+export type DuplicateCheck = {
+  readonly amountPaise: number;
+  readonly payeeName: string;
+  readonly paidAt: Date | null;
+  readonly upiRef: string | null;
+};
 
 export type PaymentLike = {
   readonly id: string;
@@ -13,7 +18,7 @@ export const DUPLICATE_TIME_WINDOW_MS = 120_000;
 
 export function findDuplicate<T extends PaymentLike>(
   existing: readonly T[],
-  parsed: ParsedReceipt,
+  parsed: DuplicateCheck,
 ): T | null {
   if (parsed.upiRef) {
     const match = existing.find((p) => p.upiRef === parsed.upiRef);

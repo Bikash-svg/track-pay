@@ -74,9 +74,11 @@ function ShareIntentWatcher() {
 
 export default function RootLayout() {
   useEffect(() => {
-    getOcrService().catch(() => {
-      // Silent — OCR will retry on first use if eager init fails
-    });
+    // TEMP DISABLED 2026-11-08: onnx runtime crash at boot.
+    // Re-enable after verifying onnx native module works.
+    // getOcrService().catch(() => {
+    //   // Silent — OCR will retry on first use if eager init fails
+    // });
   }, []);
 
   return (

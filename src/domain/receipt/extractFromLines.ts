@@ -25,26 +25,29 @@ function hasReceiptMarkers(lines: readonly OcrLine[]): boolean {
   return count >= 2;
 }
 
+const REDACT_PATTERN = /x{3,}/i;
+
 export function extractFromLines(
   lines: readonly OcrLine[],
   imageHeight: number,
   referenceDate: Date,
 ): ParsedReceipt | ReceiptRefusal {
-  if (lines.length === 0) return { reason: 'unreadable' };
-  if (!hasReceiptMarkers(lines)) return { reason: 'unreadable' };
+  const filtered = lines.filter((ln) => !REDACT_PATTERN.test(ln.text));
+  if (filtered.length === 0) return { reason: 'unreadable' };
+  if (!hasReceiptMarkers(filtered)) return { reason: 'unreadable' };
 
-  const status = extractStatus(lines);
+  const direction = extractDirection(filtered, imageHeight);
+  const status = extractStatus(filtered, direction.direction);
   if (status === 'failed') return { reason: 'failed' };
   if (status === 'pending') return { reason: 'pending' };
 
-  const amount = extractAmount(lines, imageHeight);
+  const amount = extractAmount(filtered, imageHeight);
   if (!amount || !amount.accepted) return { reason: 'no_amount' };
 
-  const direction = extractDirection(lines, imageHeight);
-  const counterparty = extractCounterparty(lines, direction);
-  const { paidAt, time } = extractDateTime(lines, referenceDate);
-  const app = extractApp(lines);
-  const upiRef = extractUpiRef(lines);
+  const counterparty = extractCounterparty(filtered, direction);
+  const { paidAt, time } = extractDateTime(filtered, referenceDate);
+  const app = extractApp(filtered);
+  const upiRef = extractUpiRef(filtered);
 
   return {
     amountPaise: parseAmountToPaise(amount.displayText),

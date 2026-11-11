@@ -1,7 +1,20 @@
 export type { OcrLine } from '../../ocr/paddleOcr';
 
 export type ReceiptDirection = 'debit' | 'credit' | 'self_transfer' | 'unknown';
-export type ReceiptApp = 'gpay' | 'phonepe' | 'paytm' | 'navi' | 'unknown';
+export type ReceiptApp =
+  | 'gpay'
+  | 'phonepe'
+  | 'paytm'
+  | 'navi'
+  | 'bhim'
+  | 'fampay'
+  | 'slice'
+  | 'supermoney'
+  | 'bharatpe'
+  | 'amazonpay'
+  | 'mobikwik'
+  | 'cred'
+  | 'unknown';
 export type ReceiptStatus = 'success' | 'failed' | 'pending' | 'unknown';
 
 export type ParsedReceipt = {

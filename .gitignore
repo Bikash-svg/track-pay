@@ -47,3 +47,9 @@ app-example
 assets/models/*.onnx
 assets/models/character_dict.json
 assets/test-screenshots/
+
+# Dev-only OCR test screen (delete after parity test)
+app/dev-paddleocr-test.tsx
+
+# Scratch / debug output
+*.txt

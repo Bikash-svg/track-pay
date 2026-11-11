@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, ToastAndroid, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
-import { recognizeText, type OcrResult } from 'rn-mlkit-ocr';
+import { recognizeImageWithMeta } from '../src/ocr/paddleOcr';
+import { extractFromLines } from '../src/domain/receipt/extractFromLines';
 import * as FileSystem from 'expo-file-system/legacy';
 import { usePayments, type Payment } from '../src/data/payments';
 import { useDialog } from '../src/ui/DialogProvider';
@@ -10,10 +11,7 @@ import { PaymentFormDialog } from '../src/ui/PaymentFormDialog';
 import { Button, Card, Money, PayRow, Screen, Text } from '../src/ui';
 import { copy } from '../src/ui/copy';
 import { dateLabel } from '../src/domain/dateLabel';
-import {
-  parseReceipt,
-  type ReceiptRefusal,
-} from '../src/domain/receipt/parseReceipt';
+import type { ReceiptRefusal } from '../src/domain/receipt/types';
 import { findDuplicate } from '../src/domain/receipt/findDuplicate';
 
 type ResultState =
@@ -82,26 +80,33 @@ export default function ShareReceiptScreen() {
           return;
         }
 
-        const ocr = await withTimeout<OcrResult>(
-          recognizeText(filePath, 'latin'),
+        const ocr = await withTimeout(
+          recognizeImageWithMeta(filePath),
           OCR_TIMEOUT_MS,
-          { text: '', blocks: [] },
+          { lines: [], imageWidth: 0, imageHeight: 0 },
         );
-        console.log('[SHARE_PIPE]', 'ocr-len:', ocr?.text?.length ?? 'null');
+        console.log('[SHARE_PIPE]', 'ocr-lines:', ocr.lines.length);
         if (cancelled) return;
-        if (!ocr.text) {
+        if (ocr.lines.length === 0 || ocr.imageHeight === 0) {
           setState({ kind: 'ocr_error' });
           return;
         }
 
-        const parsed = parseReceipt(ocr.text, new Date());
+        const parsed = extractFromLines(ocr.lines, ocr.imageHeight, new Date());
         console.log('[SHARE_PIPE]', 'parse:', 'reason' in parsed ? parsed.reason : 'ok');
         if ('reason' in parsed) {
           setState({ kind: 'refused', reason: parsed.reason });
           return;
         }
 
-        const duplicate = findDuplicate(payments, parsed);
+        const adapted = {
+          amountPaise: parsed.amountPaise,
+          payeeName: parsed.counterparty ?? 'Unknown',
+          paidAt: parsed.paidAt,
+          upiRef: parsed.upiRef,
+        };
+
+        const duplicate = findDuplicate(payments, adapted);
         console.log('[SHARE_PIPE]', 'dup:', !!duplicate);
         if (duplicate) {
           setState({ kind: 'already_added', existing: duplicate });
@@ -109,13 +114,13 @@ export default function ShareReceiptScreen() {
         }
 
         const payment = await addPayment({
-          amountPaise: parsed.amountPaise,
-          payeeName: parsed.payeeName,
+          amountPaise: adapted.amountPaise,
+          payeeName: adapted.payeeName,
           label: null,
           category: 'Other',
-          createdAt: parsed.paidAt ?? new Date(),
-          paidAt: parsed.paidAt,
-          upiRef: parsed.upiRef,
+          createdAt: adapted.paidAt ?? new Date(),
+          paidAt: adapted.paidAt,
+          upiRef: adapted.upiRef,
           source: 'receipt',
           reviewed: false,
         });

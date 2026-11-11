@@ -43,9 +43,7 @@ export function extractAmount(lines: readonly OcrLine[], imageHeight: number): E
   });
   const pool = rupeeAndComma.length > 0 ? rupeeAndComma : rupee.length > 0 ? rupee : comma.length > 0 ? comma : candidates;
 
-  if (pool.length !== 1) return null;
-
-  const { line, lineIndex } = pool[0];
+  const { line, lineIndex } = pool.reduce((best, cur) => (cur.line.box.y < best.line.box.y ? cur : best));
   const displayText = fixAmount(line.text, line.confidence);
   return {
     rawText: line.text,

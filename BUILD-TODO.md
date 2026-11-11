@@ -531,3 +531,18 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-11-03 | Docs | Split 4-B.5a into (a) parser-only and (b) conditional crop, based on evidence. GPay's 376-char OCR (captured 2026-11-02) contains no amount digits — the big display font is a graphic ML Kit cannot read from the full image. No parser rule can extract digits that aren't there, so GPay REQUIRES crop+upscale (4-B.5b). PhonePe's 414-char OCR is unverified; if the amount IS present as text (no `₹` prefix), 4-B.5a's label-adjacency fallback can fix it without crop. Sequence: 4-B.5a (parser + diagnostic, no dep) → device test PhonePe → if PhonePe works and GPay/Navi still need crop, 4-B.5b → PaddleOCR only if crop fails (deferred to post-M1). Rationale: parser work has zero dependency risk and yields a clean commit regardless of crop outcome. | BUILD-TODO.md |
 | 2026-11-03 | A 4-B.5a Receipt parser fallback (partial) | [!] partial, committed. Refactored parseReceipt.ts to export detectAmountPaise/detectPayee/detectPaidAt/detectUpiRef; new parseDiagnostics.ts (22 lines) imports them (no duplication). Label-adjacency fallback for amounts fires only when R2 finds zero prefix matches; excludes UTR refs, dates, times, phone prefixes; requires exactly 1 candidate; R6 preserved and applied to fallback results. 18 original tests unchanged + 12 parser tests + 4 diagnostics tests = 171/171 across 20 suites. Paytm works end-to-end (payment saved, duplicate detected on re-share, not-verified marker, amount/date displayed). GPay/PhonePe/Navi still refuse: real ML Kit OCR from those apps contains NO amount digits (GPay 376, PhonePe 414 — confirmed 2026-11-03; the only number in PhonePe's OCR is marketing "10,000" from "up to 10,000" copy). Navi misreads ₹1● as 710 refused by R6. GUARDRAILS §13.4 refusal was correct — PhonePe's 10,000 must not be parsed as the amount. Remaining fix is OCR, not parser → 4-B.5b (crop+upscale + layered defense). Known gaps: PhonePe payee parser returns 'Unknown' despite 'Paid to\nBikxxx' and 'Banking Name: Bixxxx' — split across lines, needs parser rule adjustment in 4-B.5b. | src/domain/receipt/parseReceipt.ts, src/domain/receipt/parseDiagnostics.ts, src/domain/receipt/__tests__/parseReceipt.test.ts, src/domain/receipt/__tests__/parseDiagnostics.test.ts, app/share-receipt.tsx, BUILD-TODO.md |
 | 2026-11-07 | A 4-B.5c Phase 1-3B (checkpoint) | Committed `368a8d4`. PaddleOCR wrapper (ppu-paddle-ocr/mobile) + metro onnx + eager OCR init. Parser port: extractFromLines + 7 extractors mirroring baseline_hybrid.py. 31 new tests (217/217 across 27 suites). tsc clean, guardrails pass. Phases 3C-7 deferred to Dec 3 (Codex reset). | src/domain/receipt/**, src/ocr/paddleOcr.ts, metro.config.js, app/_layout.tsx, app.json, package.json, package-lock.json, BUILD-TODO.md |
+
+## 4-B.5c follow-ups (PaddleOCR production wiring)
+
+- [ ] Debug share-receipt runtime — verify [SHARE_PIPE] ocr-lines: N appears
+- [ ] Re-enable eager OCR init in app/_layout.tsx (currently commented out)
+- [ ] Remove RNFS dead code:
+      - npm uninstall @dr.pogodin/react-native-fs
+      - rm plugins/with-rnfs.js react-native.config.js
+      - remove "./plugins/with-rnfs" from app.json plugins
+- [ ] Add plugins/with-gradle-heap.js (6 GB heap persists through prebuild)
+- [ ] Run parity test — 44 fixtures in assets/test-screenshots/,
+      amount ≥42/44, all others 44/44
+- [ ] After parity: npm uninstall rn-mlkit-ocr, remove from app.json,
+      delete src/domain/receipt/parseReceipt.ts, parseDiagnostics.ts,
+      app/dev-paddleocr-test.tsx

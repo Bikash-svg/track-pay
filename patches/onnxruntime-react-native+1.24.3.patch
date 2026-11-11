@@ -1,0 +1,101 @@
+diff --git a/node_modules/onnxruntime-react-native/dist/commonjs/binding.js b/node_modules/onnxruntime-react-native/dist/commonjs/binding.js
+index b5ca0ca..0e08fdd 100644
+--- a/node_modules/onnxruntime-react-native/dist/commonjs/binding.js
++++ b/node_modules/onnxruntime-react-native/dist/commonjs/binding.js
+@@ -10,7 +10,9 @@ var _reactNative = require("react-native");
+ 
+ const Module = exports.Module = _reactNative.NativeModules.Onnxruntime;
+ if (typeof globalThis.OrtApi === 'undefined') {
+-  Module.install();
++  if (Module != null && typeof Module.install === 'function') {
++      try { Module.install(); } catch (e) { console.warn('[onnx] install failed', e); }
++  } else { console.warn('[onnx] native module not found for current architecture'); }
+ }
+ const OrtApi = exports.OrtApi = globalThis.OrtApi ?? new Proxy({}, {
+   get: () => {
+diff --git a/node_modules/onnxruntime-react-native/dist/module/binding.js b/node_modules/onnxruntime-react-native/dist/module/binding.js
+index e1bca3a..303fa13 100644
+--- a/node_modules/onnxruntime-react-native/dist/module/binding.js
++++ b/node_modules/onnxruntime-react-native/dist/module/binding.js
+@@ -6,7 +6,9 @@
+ import { NativeModules } from 'react-native';
+ export const Module = NativeModules.Onnxruntime;
+ if (typeof globalThis.OrtApi === 'undefined') {
+-  Module.install();
++  if (Module != null && typeof Module.install === 'function') {
++      try { Module.install(); } catch (e) { console.warn('[onnx] install failed', e); }
++  } else { console.warn('[onnx] native module not found for current architecture'); }
+ }
+ export const OrtApi = globalThis.OrtApi ?? new Proxy({}, {
+   get: () => {
+diff --git a/node_modules/onnxruntime-react-native/lib/binding.ts b/node_modules/onnxruntime-react-native/lib/binding.ts
+index f5963a0..c522894 100644
+--- a/node_modules/onnxruntime-react-native/lib/binding.ts
++++ b/node_modules/onnxruntime-react-native/lib/binding.ts
+@@ -1,17 +1,52 @@
+ // Copyright (c) Microsoft Corporation. All rights reserved.
+ // Licensed under the MIT License.
+ 
+-import { NativeModules } from 'react-native';
++// PATCHED 2026-11-08 by Track Pay: add new-arch fallback for the ONNX module.
++// Original code used only NativeModules.Onnxruntime, which is undefined in
++// bridgeless (React Native new architecture). We now also try TurboModuleRegistry
++// before giving up — if neither works, we log a warning and OrtApi stays undefined
++// so later calls throw a clean error rather than crashing the app at bundle-eval.
++
++import { NativeModules, TurboModuleRegistry } from 'react-native';
+ import type { OrtApi as OrtApiType } from './api';
+ 
+-export const Module = NativeModules.Onnxruntime;
++function resolveOnnxModule(): any {
++  // Try legacy bridge first (works on both old and new arch if native code exposes a shim)
++  const legacy = (NativeModules as any).Onnxruntime;
++  if (legacy != null) return legacy;
++
++  // Try new-arch TurboModule registry
++  try {
++    const turbo = (TurboModuleRegistry as any).get?.('Onnxruntime');
++    if (turbo != null) return turbo;
++  } catch {
++    // ignore — will fall through to null
++  }
++
++  return null;
++}
++
++export const Module = resolveOnnxModule();
+ 
+ declare global {
+   var OrtApi: OrtApiType; // eslint-disable-line no-var
+ }
+ 
+ if (typeof globalThis.OrtApi === 'undefined') {
+-  Module.install();
++  if (Module != null && typeof Module.install === 'function') {
++    try {
++      Module.install();
++    } catch (e) {
++      // eslint-disable-next-line no-console
++      console.warn('[onnxruntime-react-native] Module.install() failed:', e);
++    }
++  } else {
++    // eslint-disable-next-line no-console
++    console.warn(
++      '[onnxruntime-react-native] Native module not found via NativeModules.Onnxruntime nor TurboModuleRegistry. ' +
++        'OCR will not work until the native module is registered for the current architecture.',
++    );
++  }
+ }
+ 
+ export const OrtApi =
+@@ -20,7 +55,9 @@ export const OrtApi =
+     {},
+     {
+       get: () => {
+-        throw new Error('OrtApi is not initialized. Please make sure Onnxruntime installation is successful.');
++        throw new Error(
++          'OrtApi is not initialized. Onnxruntime installation or architecture registration failed.',
++        );
+       },
+     },
+   );
