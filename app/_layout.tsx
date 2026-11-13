@@ -15,7 +15,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function ShareIntentWatcher() {
   const router = useRouter();
-  const lastFp = useRef<string | null>(null);
+  // Track (path, mtime), not just path. If expo-share-intent reuses the same
+  // filename for a new share, mtime will differ and we still route.
+  const lastSeen = useRef<{ path: string; mtime: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,29 +38,38 @@ function ShareIntentWatcher() {
                 continue;
               }
               const fp = `${cacheDir}${f}`;
-              if (fp === lastFp.current) continue;
               const info = await FileSystem.getInfoAsync(fp);
               if (
-                info.exists &&
-                !info.isDirectory &&
-                info.modificationTime &&
-                now - info.modificationTime < 30
+                !info.exists ||
+                info.isDirectory ||
+                !info.modificationTime
               ) {
-                lastFp.current = fp;
-                setTimeout(() => {
-                  if (!cancelled) {
-                    router.replace({
-                      pathname: '/share-receipt',
-                      params: { fp },
-                    });
-                  }
-                }, 50);
-                break;
+                continue;
               }
+              const mtime = info.modificationTime;
+              if (
+                lastSeen.current &&
+                lastSeen.current.path === fp &&
+                lastSeen.current.mtime === mtime
+              ) {
+                continue;
+              }
+              if (now - mtime >= 30) continue;
+              lastSeen.current = { path: fp, mtime };
+              console.log('[SHARE_WATCH] route', fp, 'mtime', mtime);
+              setTimeout(() => {
+                if (!cancelled) {
+                  router.replace({
+                    pathname: '/share-receipt',
+                    params: { fp, mtime: String(mtime) },
+                  });
+                }
+              }, 50);
+              break;
             }
           }
-        } catch {
-          // cache read failed — try again next tick
+        } catch (err) {
+          console.log('[SHARE_WATCH] poll error', err);
         }
         await new Promise((r) => setTimeout(r, 300));
       }

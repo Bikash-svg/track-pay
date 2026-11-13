@@ -22,7 +22,7 @@ type ResultState =
   | { kind: 'ocr_error' };
 
 const FILE_WAIT_TIMEOUT_MS = 5000;
-const OCR_TIMEOUT_MS = 15000;
+const OCR_TIMEOUT_MS = 30000;
 
 async function waitForFile(uri: string, timeoutMs: number): Promise<boolean> {
   const start = Date.now();
@@ -56,18 +56,29 @@ export default function ShareReceiptScreen() {
   const { payments, addPayment, updatePayment, deletePayment } = usePayments();
   const { open, close } = useDialog();
   const router = useRouter();
-  const params = useLocalSearchParams<{ fp?: string }>();
+  const params = useLocalSearchParams<{ fp?: string; mtime?: string }>();
   const [state, setState] = useState<ResultState>({ kind: 'pending' });
-  const processedPath = useRef<string | null>(null);
+  const processedKey = useRef<string | null>(null);
+  const paymentsRef = useRef(payments);
+  const addPaymentRef = useRef(addPayment);
+  useEffect(() => {
+    paymentsRef.current = payments;
+  }, [payments]);
+  useEffect(() => {
+    addPaymentRef.current = addPayment;
+  }, [addPayment]);
+
   const filePathFromParam =
     typeof params.fp === 'string' ? decodeURIComponent(params.fp) : undefined;
   const filePath = filePathFromParam ?? shareIntent?.files?.[0]?.path;
+  const fileKey = filePath ? `${filePath}@${params.mtime ?? '0'}` : null;
 
   useEffect(() => {
-    if (!filePath) return;
-    if (processedPath.current === filePath) return;
+    if (!filePath || !fileKey) return;
+    if (processedKey.current === fileKey) return;
 
-    processedPath.current = filePath;
+    processedKey.current = fileKey;
+    console.log('[SHARE_PIPE] effect-run', { filePath, mtime: params.mtime });
     let cancelled = false;
 
     void (async () => {
@@ -86,6 +97,12 @@ export default function ShareReceiptScreen() {
           { lines: [], imageWidth: 0, imageHeight: 0 },
         );
         console.log('[SHARE_PIPE]', 'ocr-lines:', ocr.lines.length);
+        ocr.lines.forEach((ln, i) => {
+          console.log(
+            `[SHARE_PIPE] line${i}`,
+            JSON.stringify({ t: ln.text, c: Number(ln.confidence.toFixed(2)), y: ln.box.y }),
+          );
+        });
         if (cancelled) return;
         if (ocr.lines.length === 0 || ocr.imageHeight === 0) {
           setState({ kind: 'ocr_error' });
@@ -106,14 +123,14 @@ export default function ShareReceiptScreen() {
           upiRef: parsed.upiRef,
         };
 
-        const duplicate = findDuplicate(payments, adapted);
+        const duplicate = findDuplicate(paymentsRef.current, adapted);
         console.log('[SHARE_PIPE]', 'dup:', !!duplicate);
         if (duplicate) {
           setState({ kind: 'already_added', existing: duplicate });
           return;
         }
 
-        const payment = await addPayment({
+        const payment = await addPaymentRef.current({
           amountPaise: adapted.amountPaise,
           payeeName: adapted.payeeName,
           label: null,
@@ -125,6 +142,7 @@ export default function ShareReceiptScreen() {
           reviewed: false,
         });
         console.log('[SHARE_PIPE]', 'saved:', !!payment);
+        console.log('[SHARE_PIPE] about-to-set-saved', { cancelled });
         if (!cancelled) setState({ kind: 'saved', payment });
       } catch (e) {
         if (!cancelled) {
@@ -139,7 +157,7 @@ export default function ShareReceiptScreen() {
     return () => {
       cancelled = true;
     };
-  }, [filePath, payments, addPayment]);
+  }, [filePath, fileKey, params.mtime]);
 
   const handleLooksRight = async (payment: Payment) => {
     await updatePayment(payment.id, { reviewed: true });
