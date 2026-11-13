@@ -32,10 +32,17 @@ describe('extractAmount', () => {
     expect(result?.lineIndex).toBe(1);
   });
 
-  it('returns null for ambiguous candidates in the same winning tier', () => {
-    expect(
-      extractAmount([line('₹100.00', 0.95, 100), line('₹200.00', 0.95, 200)], 1_000),
-    ).toBeNull();
+  it('picks the topmost candidate when multiple share a winning tier (Python parity)', () => {
+    // Python extract_amount: `top = min(pool, key=lambda x: x['box'][1])`.
+    // Tier ambiguity does NOT return null — the topmost hero amount wins,
+    // which matches real receipt layouts (transaction amount sits above any
+    // secondary rupee values).
+    const result = extractAmount(
+      [line('₹100.00', 0.95, 100), line('₹200.00', 0.95, 200)],
+      1_000,
+    );
+    expect(result?.displayText).toBe('₹100.00');
+    expect(result?.lineIndex).toBe(0);
   });
 
   it('skips a header-zone candidate when another candidate exists', () => {

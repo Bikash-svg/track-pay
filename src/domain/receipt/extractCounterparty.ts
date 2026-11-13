@@ -25,7 +25,7 @@ function isCounterparty(text: string, confidence: number): boolean {
 }
 
 function truncate(name: string): string {
-  return name.slice(0, 40);
+  return name.slice(0, 50);  // Python _is_name upper bound
 }
 
 function nameBelow(lines: readonly OcrLine[], baseY: number): string | null {
