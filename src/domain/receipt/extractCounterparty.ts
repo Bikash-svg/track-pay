@@ -19,7 +19,7 @@ const MIN_OFFSET_Y = 20;
 
 function isCounterparty(text: string, confidence: number): boolean {
   const candidate = text.trim();
-  if (candidate.length < 2 || confidence < 0.5 || !/[a-z]{3,}/i.test(candidate)) return false;
+  if (candidate.length < 2 || candidate.length > 50 || confidence < 0.5 || !/[a-z]{3,}/i.test(candidate)) return false;
   if (/^₹?\d[\d,]*(?:\.\d{1,2})?$/.test(candidate)) return false;
   return !UI_EXCLUSIONS.some((excluded) => candidate.toLowerCase().includes(excluded));
 }
@@ -66,6 +66,16 @@ function nameAfterPaidLine(lines: readonly OcrLine[]): string | null {
   return null;
 }
 
+function nameFromStandaloneToFrom(lines: readonly OcrLine[]): string | null {
+  for (const line of lines) {
+    const m = /^(?:to|from)[:\s]+(.+)$/i.exec(line.text.trim());
+    if (!m) continue;
+    const candidate = m[1].trim();
+    if (isCounterparty(candidate, line.confidence)) return truncate(candidate);
+  }
+  return null;
+}
+
 export function extractCounterparty(
   lines: readonly OcrLine[],
   direction: DirectionResult,
@@ -75,6 +85,7 @@ export function extractCounterparty(
       nameAfterLabel(lines, 'paid to') ??
       nameAfterPaidLine(lines) ??
       nameAfterLabel(lines, 'to\\s+upi\\s+id') ??
+      nameFromStandaloneToFrom(lines) ??
       nameAfterLabel(lines, 'banking name')
     );
   }
@@ -82,6 +93,7 @@ export function extractCounterparty(
     return (
       nameAfterLabel(lines, 'received from') ??
       nameAfterLabel(lines, 'from\\s+upi\\s+id') ??
+      nameFromStandaloneToFrom(lines) ??
       nameAfterLabel(lines, 'banking name')
     );
   }
