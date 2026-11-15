@@ -566,7 +566,7 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
       delete src/domain/receipt/parseReceipt.ts, parseDiagnostics.ts,
       app/dev-paddleocr-test.tsx
 
-### Architecture — processReceipt.ts
+### Architecture — processReceipt.ts (PLANNED, not yet implemented)
 Orchestrator separating OCR engine/passes from parser from UI.
 
 Contract: `processReceipt(uri, passes = OCR_PASSES) → { ok, parsed, via } | { ok: false, refusal, triedPasses }`
