@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, ToastAndroid, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
-import { recognizeImageWithMeta } from '../src/ocr/paddleOcr';
+import { recognizeImageWithMeta, recognizeGrayscale } from '../src/ocr/paddleOcr';
 import { extractFromLines } from '../src/domain/receipt/extractFromLines';
 import * as FileSystem from 'expo-file-system/legacy';
 import { usePayments, type Payment } from '../src/data/payments';
@@ -109,8 +109,24 @@ export default function ShareReceiptScreen() {
           return;
         }
 
-        const parsed = extractFromLines(ocr.lines, ocr.imageHeight, new Date());
+        let parsed = extractFromLines(ocr.lines, ocr.imageHeight, new Date());
         console.log('[SHARE_PIPE]', 'parse:', 'reason' in parsed ? parsed.reason : 'ok');
+
+        if ('reason' in parsed && parsed.reason === 'no_amount') {
+          console.log('[SHARE_PIPE]', 'colour no_amount → grayscale fallback');
+          try {
+            const grayOcr = await recognizeGrayscale(filePath);
+            const grayParsed = extractFromLines(grayOcr.lines, grayOcr.imageHeight, new Date());
+            console.log('[SHARE_PIPE]', 'gray-parse:', 'reason' in grayParsed ? grayParsed.reason : 'ok');
+            if (!('reason' in grayParsed)) {
+              console.log('[SHARE_PIPE]', 'grayscale rescued');
+              parsed = grayParsed;
+            }
+          } catch (e) {
+            console.log('[SHARE_PIPE]', 'grayscale error:', e instanceof Error ? e.message : String(e));
+          }
+        }
+
         if ('reason' in parsed) {
           setState({ kind: 'refused', reason: parsed.reason });
           return;

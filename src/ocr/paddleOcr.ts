@@ -11,6 +11,7 @@
 // app has mounted and the native bridge is warm.
 
 import { Asset } from 'expo-asset';
+import { Skia, ImageFormat } from '@shopify/react-native-skia';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { File } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -159,3 +160,67 @@ export async function recognizeImageWithMeta(
     imageHeight: height,
   };
 }
+
+// ============ Grayscale B&W fallback (matches baseline_hybrid.py) ============
+// Python: img.convert('L').save(bw_path); ocr(bw_path); extract(bw_lines)
+// No crop, no autocontrast, no resize — just grayscale conversion.
+const GRAYSCALE_MATRIX = [
+  0.299, 0.587, 0.114, 0, 0,
+  0.299, 0.587, 0.114, 0, 0,
+  0.299, 0.587, 0.114, 0, 0,
+  0,     0,     0,     1, 0,
+];
+
+export async function recognizeGrayscale(uri: string): Promise<{
+  lines: OcrLine[];
+  imageWidth: number;
+  imageHeight: number;
+}> {
+  const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+  const binary = globalThis.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+
+  const skData = Skia.Data.fromBytes(bytes);
+  const skImage = Skia.Image.MakeImageFromEncoded(skData);
+  if (!skImage) throw new Error('[grayscale] Skia decode failed');
+
+  const w = skImage.width();
+  const h = skImage.height();
+
+  const surface = Skia.Surface.MakeOffscreen(w, h);
+  if (!surface) throw new Error('[grayscale] Surface.MakeOffscreen failed');
+
+  const canvas = surface.getCanvas();
+  const paint = Skia.Paint();
+  paint.setColorFilter(Skia.ColorFilter.MakeMatrix(GRAYSCALE_MATRIX));
+  canvas.drawImage(skImage, 0, 0, paint);
+
+  const grayImage = surface.makeImageSnapshot();
+  const pngBytes = grayImage.encodeToBytes(ImageFormat.PNG);
+  if (!pngBytes) throw new Error('[grayscale] PNG encode failed');
+
+  const pngArrayBuffer = pngBytes.buffer.slice(
+    pngBytes.byteOffset,
+    pngBytes.byteOffset + pngBytes.byteLength,
+  );
+
+  const svc = await getOcrService();
+  const ppuOcv: any = await import('ppu-ocv/canvas-mobile');
+  const platform: any = (ppuOcv as any).getPlatform
+    ? (ppuOcv as any).getPlatform()
+    : (ppuOcv as any).default;
+  const ocrCanvas = await platform.loadImage(pngArrayBuffer);
+
+  const result = await svc.recognize(ocrCanvas, { flatten: true } as never);
+  return {
+    lines: result.results.map((r) => ({
+      text: r.text,
+      confidence: r.confidence,
+      box: r.box,
+    })),
+    imageWidth: w,
+    imageHeight: h,
+  };
+}
+
