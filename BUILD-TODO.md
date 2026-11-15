@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A:** 4-B.5c Replace ML Kit with PaddleOCR (partial — Phases 1-3B committed `368a8d4`, 3C-7 deferred to Dec 3 2026). Completed: 4-B.0 `[x]`, 4-B.1 `[!]` partial (superseded by PaddleOCR pivot), 4-B.2 `[x]`, 4-B.3 `[x]`, 4-B.3a `[x]`, 4-B.4 `[x]`, 4-B.5 `[!]` partial.
+**Current step, Track A:** 4-B.5c Replace ML Kit with PaddleOCR (partial — Phase 4-7 committed `eda6b78` 2026-11-15; processReceipt + B&W fallback in-flight; parity test + cleanup pending). Completed: 4-B.0 `[x]`, 4-B.1 `[!]` partial (superseded by PaddleOCR pivot), 4-B.2 `[x]`, 4-B.3 `[x]`, 4-B.3a `[x]`, 4-B.4 `[x]`, 4-B.5 `[!]` partial.
 
 **Current step, Track B:** not started (waits for M1)
 
@@ -532,17 +532,67 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-11-03 | A 4-B.5a Receipt parser fallback (partial) | [!] partial, committed. Refactored parseReceipt.ts to export detectAmountPaise/detectPayee/detectPaidAt/detectUpiRef; new parseDiagnostics.ts (22 lines) imports them (no duplication). Label-adjacency fallback for amounts fires only when R2 finds zero prefix matches; excludes UTR refs, dates, times, phone prefixes; requires exactly 1 candidate; R6 preserved and applied to fallback results. 18 original tests unchanged + 12 parser tests + 4 diagnostics tests = 171/171 across 20 suites. Paytm works end-to-end (payment saved, duplicate detected on re-share, not-verified marker, amount/date displayed). GPay/PhonePe/Navi still refuse: real ML Kit OCR from those apps contains NO amount digits (GPay 376, PhonePe 414 — confirmed 2026-11-03; the only number in PhonePe's OCR is marketing "10,000" from "up to 10,000" copy). Navi misreads ₹1● as 710 refused by R6. GUARDRAILS §13.4 refusal was correct — PhonePe's 10,000 must not be parsed as the amount. Remaining fix is OCR, not parser → 4-B.5b (crop+upscale + layered defense). Known gaps: PhonePe payee parser returns 'Unknown' despite 'Paid to\nBikxxx' and 'Banking Name: Bixxxx' — split across lines, needs parser rule adjustment in 4-B.5b. | src/domain/receipt/parseReceipt.ts, src/domain/receipt/parseDiagnostics.ts, src/domain/receipt/__tests__/parseReceipt.test.ts, src/domain/receipt/__tests__/parseDiagnostics.test.ts, app/share-receipt.tsx, BUILD-TODO.md |
 | 2026-11-07 | A 4-B.5c Phase 1-3B (checkpoint) | Committed `368a8d4`. PaddleOCR wrapper (ppu-paddle-ocr/mobile) + metro onnx + eager OCR init. Parser port: extractFromLines + 7 extractors mirroring baseline_hybrid.py. 31 new tests (217/217 across 27 suites). tsc clean, guardrails pass. Phases 3C-7 deferred to Dec 3 (Codex reset). | src/domain/receipt/**, src/ocr/paddleOcr.ts, metro.config.js, app/_layout.tsx, app.json, package.json, package-lock.json, BUILD-TODO.md |
 
+| 2026-11-15 | A 4-B.5c Phase 4-7 (PaddleOCR production wiring) | [!] partial, committed `eda6b78`. ONNX bridge fixed (with-onnxruntime.js). Models bundled via Metro asset registry (res/FP.onnx, res/11.onnx, res/Lj.onnx). Dict JSON→newline 18,708 entries (was 1). OOM fixed (File.bytes JSI + android.largeHeap). Canvas bug fixed (platform.loadImage not prepareCanvas on RN 0.81). Parser A aligned to baseline_hybrid.py — 6 gaps closed (redact filter, 12-app list, amount tie-break by y, status implicit-success, UI_EXCLUSIONS 30+, counterparty min_offset=20). share-receipt.tsx swapped ML Kit→PaddleOCR + extractFromLines. ML Kit 0 refs in bundle. processReceipt.ts + recognizeGrayscale B&W fallback written (runtime test pending). TS clean, BUILD SUCCESSFUL. Runtime verification of share-receipt pending. famPay-3, navi-1 remain known fails (matches Python 42/44). | src/ocr/paddleOcr.ts, src/domain/receipt/processReceipt.ts (new), src/domain/receipt/extract*.ts, src/domain/receipt/findDuplicate.ts, src/domain/receipt/types.ts, src/domain/receipt/__tests__/extractStatus.test.ts, app/share-receipt.tsx, app/_layout.tsx, app.json, plugins/with-onnxruntime.js (new), plugins/with-rnfs.js (new), react-native.config.js (new), patches/onnxruntime-react-native+1.24.3.patch (new), metro.config.js, package.json, package-lock.json, BUILD-TODO.md |
+
 ## 4-B.5c follow-ups (PaddleOCR production wiring)
 
-- [ ] Debug share-receipt runtime — verify [SHARE_PIPE] ocr-lines: N appears
-- [ ] Re-enable eager OCR init in app/_layout.tsx (currently commented out)
-- [ ] Remove RNFS dead code:
+### Verify (highest priority — anything below is unproven until these pass)
+- [ ] Verify processReceipt refactor: rebuild, test GPay screenshot via share
+      Expected: `[SHARE_PIPE] process: ok via colour`
+- [ ] Verify B&W fallback rescues Navi debit: rebuild, test navi-3/4/5
+      Expected: `process: ok via grayscale`
+      If still fails: add `recognizeNaviCrop` pass (template below)
+- [ ] Debug share-receipt deep-link: app launches but route silent.
+      Try URI variants: `trackpay://share-receipt?fp=...` (current),
+      `trackpay:///share-receipt?fp=...` (triple slash),
+      `trackpay:share-receipt?fp=...` (opaque). If none fire, add a mount
+      console.log to share-receipt.tsx and check logcat.
+
+### Cleanup
+- [ ] Remove RNFS dead code (kept so app.json plugin resolves):
       - npm uninstall @dr.pogodin/react-native-fs
       - rm plugins/with-rnfs.js react-native.config.js
       - remove "./plugins/with-rnfs" from app.json plugins
 - [ ] Add plugins/with-gradle-heap.js (6 GB heap persists through prebuild)
-- [ ] Run parity test — 44 fixtures in assets/test-screenshots/,
-      amount ≥42/44, all others 44/44
+- [ ] Re-enable eager OCR init in app/_layout.tsx (currently commented out)
+
+### Parity + retirement
+- [ ] Run parity test — 44 fixtures in assets/test-screenshots/
+      Ground truth: assets/test-screenshots/baseline_hybrid_output.json
+      Target: amount ≥42/44, all others 44/44
+      Python reference: 42/44 amount (famPay-3, navi-1 known fails),
+      100% date/time/direction/app/status
 - [ ] After parity: npm uninstall rn-mlkit-ocr, remove from app.json,
       delete src/domain/receipt/parseReceipt.ts, parseDiagnostics.ts,
       app/dev-paddleocr-test.tsx
+
+### Architecture — processReceipt.ts
+Orchestrator separating OCR engine/passes from parser from UI.
+
+Contract: `processReceipt(uri, passes = OCR_PASSES) → { ok, parsed, via } | { ok: false, refusal, triedPasses }`
+
+Default passes (ordered):
+1. `colour` — `recognizeImageWithMeta` (JPEG → canvas → OCR)
+2. `grayscale` — `recognizeGrayscale` (Skia grayscale → OCR) — matches Python B&W fallback
+
+To add a fallback pass (e.g. Navi crop):
+1. Write `recognizeXxx(uri): Promise<OcrResult>` in paddleOcr.ts
+2. Add `{ name: 'xxx', recognize: recognizeXxx }` to OCR_PASSES
+3. Rebuild — share-receipt.tsx untouched, zero risk to other apps
+
+### navi_crop pass template (when ready)
+In paddleOcr.ts:
+  export async function recognizeNaviCrop(uri: string): Promise<OcrResult> {
+    const manipulated = await manipulateAsync(
+      uri,
+      [
+        { crop: { originX: 0.05, originY: 0.20, width: 0.90, height: 0.60 } as any },
+        { resize: { width: 2160 } },
+      ],
+      { compress: 0.95, format: SaveFormat.PNG },
+    );
+    return recognizeImageWithMeta(manipulated.uri);
+  }
+
+In processReceipt.ts OCR_PASSES, append:
+  { name: 'navi_crop', recognize: recognizeNaviCrop }
