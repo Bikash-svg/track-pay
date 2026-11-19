@@ -18,11 +18,11 @@ How Track Pay is built. Read `GUARDRAILS.md` first: it limits everything below. 
 | App | React Native, Expo SDK 54, TypeScript (strict), Android only, development build |
 | Routing | Expo Router (file based) |
 | State | Zustand stores that read the repositories, plus the small React contexts already built |
-| Storage | `expo-sqlite` for payments (from Step 4-C.1; AsyncStorage until then). AsyncStorage key-value for settings and profile |
+| Storage | `expo-sqlite` for payments (from Step 4-C.1; AsyncStorage until then). AsyncStorage key-value for settings, profile and the pending-receipt index. Pending-receipt image files under `documentDirectory/pending/` |
 | Notifications | `react-native-notify-kit` 10.8.1 (chosen in Step 0.3) with action buttons that work with the app closed |
-| Screenshot reading (OCR) | Google ML Kit text recognition through `rn-mlkit-ocr`, **bundled model** (`ocrUseBundled: true`) |
-| Share target | `expo-share-intent` (receives images from the Android share sheet) with `app/+native-intent.ts` |
-| Gallery picking | `expo-document-picker` (images, multi-select). No permission needed |
+| Screenshot reading (OCR) | PaddleOCR via `ppu-paddle-ocr` + `onnxruntime-react-native` + `@shopify/react-native-skia`, bundled ONNX models, no network |
+| Share target | `expo-share-intent` with local config plugin `plugins/withShareIntentAttributes.js` (see §10; `app/+native-intent.ts` was deleted in 4-B.1) |
+| Gallery picking | `expo-document-picker` (images, multi-select). No permission needed. Uses the same pending-queue intake as shares (4-D.2) |
 | Graphics | react-native-svg for charts; expo-linear-gradient and optional expo-blur arrive in the design plan |
 | Icons | None in the project plan; lucide-react-native in the design plan |
 | Fonts | System font in the project plan; Plus Jakarta Sans and JetBrains Mono in the design plan |
@@ -41,9 +41,9 @@ UI (app, src/features, src/ui)
 Platform: src/notifications, src/native, plugins
 ```
 
-- `app/`: routes (Expo Router reads the root `app/` folder). Tabs (Home, Analytics, History, Settings), the share-receipt result page, the batch result page, popups, splash and onboarding.
+- `app/`: routes (Expo Router reads the root `app/` folder). Tabs (Home, Analytics, History, Settings), the share-receipt intake page, the pending-verify grid and card pages, popups, splash and onboarding.
 - `src/ui`: design system: tokens (`theme.ts`), `ThemeProvider`, `Text`, components, dialog host, screen shell, tab bar, top bar.
-- `src/features/<name>`: feature-specific components (home, analytics, history, settings, payments, onboarding).
+- `src/features/<name>`: feature-specific components (home, analytics, history, settings, payments, onboarding, **pending** — pod, grid, card, scan engine).
 - `src/domain`: payment lifecycle, money, dates, **receipt parsing (`src/domain/receipt`)**, analytics maths, notification planner, backup, statement, notification text. Unit tested.
 - `src/data`: the only code that touches storage. Numbered migrations.
 - `src/notifications`, `src/native`: everything platform specific (notification library, OCR wrapper), kept small and free of business rules.
@@ -63,7 +63,9 @@ The app is built in two plans (`README.md`). To make that possible:
 
 ## 5. Data model
 
-**payments** (SQLite from Step 4-C.1): `id`, `amountPaise` (integer), `payeeName`, `payeeVpa` (nullable), `label` (note, nullable), `category` (Food, Shopping, Bills, Transport, Other), `status` (`success` for every new payment; `pending` and `failed` exist only in old test rows), `source` (`receipt` for a screenshot, `manual` for a typed payment), `reviewed` (boolean), `paidAt` (the date and time of the payment, from the receipt or chosen by the user, never in the future), `createdAt` (when it was recorded), `upiRef` (nullable, used to detect duplicates). If the current store already has a date field, keep its name and ask before adding a second one. `confirmedAt` and the sources `qr`, `friend` and `quick_add` are no longer used.
+**payments** (SQLite from Step 4-C.1): `id`, `amountPaise` (integer), `payeeName`, `payeeVpa` (nullable), `label` (note, nullable), `category` (Food, Shopping, Bills, Transport, Other), `status` (`success` for every new payment; `pending` and `failed` exist only in old test rows), `source` (`receipt` for a screenshot, `manual` for a typed payment), `reviewed` (boolean), `paidAt` (the date and time of the payment, from the receipt or chosen by the user, never in the future), `createdAt` (when it was recorded), `upiRef` (nullable, used to detect duplicates). If the current store already has a date field, keep its name and ask before adding a second one. `confirmedAt` and the sources `qr`, `friend` and `quick_add` are no longer used. `reviewed` is deprecated (2026-11-18): kept on old rows only. Every new payment is created at verify time with `reviewed = true`. The "Not verified" marker, the History "Not verified" filter and `PayRow.notVerified` retire.
+
+**pending receipts** (JSON index in AsyncStorage at `trackpay.pendingItems.v1`; image files under `documentDirectory/pending/`): `id`, `imagePath` (file:// URI), `originalName` (nullable), `capturedAt`, `status` (`unscanned` | `scanning` | `scanned` | `verified` | `error`), `scanResult` (nullable: `{ amountPaise, payeeName, paidAt, rawLines, duplicateOfPaymentId? }`), `error` (nullable), `paymentId` (nullable — set on verify). A `scanning` row at boot is demoted to `unscanned` by `sweepInterrupted` — a mid-scan kill is recoverable, not fatal.
 
 **settings and profile** (key-value): theme (`dark`, `light`, `auto`); limit on/off and `limitPaise`; quiet hours (start and end minute, default 23:00 to 07:00); `remindersEnabled` (default on); `reminderTimes` (1 to 6 times as minutes since midnight, default 10:00, 14:00, 18:00, 21:00); `backupReminderEnabled` (default on); `lastBackupReminderMonth`; `limitAlertsFired` (the month and which of 80 and 100 already fired); lock-screen details on/off (default off); last export time; and the profile: `firstName`, `surname`, `avatarUri` (nullable), `onboarded` (boolean). `preferredUpiPackage` and the persistent quick-add switch are no longer used.
 
@@ -72,18 +74,25 @@ Adding keys is additive and needs no migration. Renaming a key, changing a value
 ## 6. Payment lifecycle
 
 ```
-shared or picked screenshot -> read -> parsed -> saved (reviewed = false)
+shared or picked screenshot -> copied to app storage -> pending row (unscanned)
+                             (no OCR at share time; app exits)
 manual add                  -> saved (reviewed = true)
-saved -> Looks right        -> reviewed = true
-saved -> Edit               -> saved again, reviewed = true
-saved -> Undo or Delete     -> removed
+pending (unscanned) -> Start scanning (batch or single) -> OCR + parse
+                    -> scanned with result (or error)
+pending (scanned)   -> verify  -> payment created (reviewed = true)
+                               -> pending row verified, image deleted
+pending (scanned)   -> discard -> pending row removed, image deleted
+pending (unscanned) -> discard -> pending row removed, image deleted
+saved payment       -> Edit    -> updated
+saved payment       -> Delete  -> removed
 ```
 
 - Only the user's actions create, change or remove a payment. OCR output never changes an existing payment.
-- A payment with `reviewed = false` shows a "Not verified" marker in History and on Home.
-- A screenshot of a failed, pending or unreadable payment is refused and nothing is saved. A duplicate is refused and the existing payment is shown.
-- Totals count every payment. Old `failed` test rows are never counted.
-- There is no retry. Track Pay does not start payments.
+- A payment exists in the store only after the user has verified it from the pending card. History has no unreviewed state.
+- A pending screenshot that cannot be read shows an error on its card; the user can retry, discard it, or enter it manually.
+- A pending screenshot that matches an existing payment (same `upiRef`, or same amount, payee and time) is flagged as a likely duplicate on its card; the user decides.
+- Totals count every payment in the store. Old `failed` test rows are never counted.
+- There is no retry of a payment. Track Pay does not start payments.
 
 ## 7. Money and analytics definitions
 
@@ -105,16 +114,17 @@ Totals are only as complete as what the user records; each analytics screen says
 
 ## 8. Flows
 
-**Share a screenshot:** the user pays in any UPI app and shares the success screenshot to Track Pay. `expo-share-intent` passes the image to the share-receipt page. The app reads it with ML Kit and parses it (`parseReceipt`). Outcomes:
-- A successful receipt with an amount: the payment is saved (`source` receipt, `reviewed` false), the image is discarded, and the result page shows amount, payee, date and category with Looks right, Edit and Undo. The receipt notification is posted (Phase 8).
-- A duplicate: nothing is saved; "Already added" shows the existing payment.
-- A failed, pending or unreadable screenshot: nothing is saved; a message offers Enter manually.
+**Share a screenshot:** the user pays in any UPI app and shares the success screenshot to Track Pay. The share-receipt page copies the image into app storage, appends a pending row (`status: 'unscanned'`), and exits within ~1 second. No OCR runs at share time. The share appears later on the Pending Pod on Home.
 
-**Pick from the gallery:** Add from screenshot opens the file picker (images, several at once). Each image goes through the same steps. One summary page lists what was saved and what was skipped, and one grouped notification is posted.
+**Pick from the gallery:** Add from screenshot opens the file picker (images, several at once). Each image is copied to app storage and becomes a pending row (`unscanned`). No OCR runs at pick time. Same Pending Pod destination as a share.
 
 **Add manually:** Add manually opens the payment form. Saving creates a payment with `reviewed` true.
 
-**Verify, edit, undo:** Looks right sets `reviewed` true. Edit opens the payment form with the values filled in; saving sets `reviewed` true. Undo removes a payment that was just saved. Delete asks for confirmation and names the payment.
+**Verify pending:** the Pending Pod on Home shows a horizontal thumbnail strip plus a **Verify Pending** button. Verify Pending opens a grid of every pending item with a **Start scanning** button. Start scanning runs `recognizeImageWithMeta → extractFromLines` per item, writing results back to the pending row. The scan can be interrupted by backgrounding or by the OS killing the app — per-item status persists, and `sweepInterrupted` on next launch demotes any stale `scanning` row to `unscanned`, showing a "N items unfinished — tap to resume" prompt. Notifications fire on scan begin and scan complete.
+
+**Pending card:** tapping any pending item opens a card — screenshot on the top half, details on the bottom. Scanned items show editable fields (amount, payee, date, category) and a Verify button; Verify writes the payment and marks the row verified. Unscanned items show a Scan button. Scanning from a card runs independently of whether the user stays on the card; on completion the card updates in place.
+
+**Verify, edit, undo:** Verify from the pending card creates the payment (see above). Edit opens the payment form with the values filled in. Undo removes a payment that was just saved. Delete asks for confirmation and names the payment.
 
 **Daily log reminders:** the planner computes the next reminder times from `reminderTimes`. A time inside quiet hours is skipped, not moved. A reminder is skipped if a payment was logged, or No payments was tapped, since the previous reminder. **No payments** dismisses the notification and cancels the rest of that day's reminders. **Snooze 1 hour** posts it once more, unless that falls in quiet hours. The planner replaces the scheduled set when the app opens and after any change to the settings or the payments.
 
@@ -142,7 +152,7 @@ Lock-screen details are hidden by default; the lock screen shows generic text. B
 
 ## 10. Platform code
 
-There is no custom native module. The share target comes from `expo-share-intent` plus the `app/+native-intent.ts` redirect (which resolves the Expo Router linking conflict). OCR comes from `rn-mlkit-ocr`, wrapped in `src/native` so the rest of the app never imports it. A small Expo config plugin strips the INTERNET permission after prebuild. No Android source is tracked in git.
+There is no custom native module. The share target comes from `expo-share-intent` plus the local config plugin `plugins/withShareIntentAttributes.js` (the old `app/+native-intent.ts` was deleted in 4-B.1 — its redirect dropped the `dataUrl`). OCR comes from `ppu-paddle-ocr` + `onnxruntime-react-native` + `@shopify/react-native-skia`, wrapped in `src/ocr` so the rest of the app never imports them. A small Expo config plugin strips the INTERNET permission after prebuild. No Android source is tracked in git.
 
 ## 11. Permissions
 
@@ -160,11 +170,11 @@ Notifications only, asked when needed and after an explanation dialog. The share
 
 | Risk | Mitigation |
 |---|---|
-| OCR misreads an amount or payee | The result page shows the values, the payment is marked Not verified, and Looks right, Edit and Undo are always one tap away. Refuse when unsure |
+| OCR misreads an amount or payee | The pending card shows the values and requires Verify before the payment counts. Refuse when unsure; manual entry is always available |
 | UPI apps change their success screens | Parser tests per app on synthetic layouts; manual add as the fallback |
 | The same screenshot is shared twice | Duplicate check on `upiRef`, or on amount, payee and time |
 | A failed or pending screenshot is shared | Detect the status text and refuse |
-| ML Kit sends diagnostics to Google | The INTERNET permission is stripped, so it fails silently (Path B) |
+| OS kills the app mid-scan (Vivo / OriginOS) | Per-item status persisted; `sweepInterrupted` on next launch demotes stale `scanning` rows to `unscanned`; user sees a "N items unfinished — tap to resume" prompt |
 | Stripping INTERNET or the exact-alarm permission breaks notify-kit | Re-test R6, R7, R10 after the plugin lands; reminders are inexact by design |
 | Android lets users block a notification channel | Say so in Settings; never promise limit alerts cannot be silenced |
 | Phone brands kill background work | Scheduled notifications, a battery-settings shortcut, device tests |

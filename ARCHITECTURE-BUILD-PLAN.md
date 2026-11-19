@@ -152,7 +152,9 @@ This plan builds a **working version of the app with a plain look**. Every featu
 
 ## Phase 4-B: Screenshot tracker (active)
 
-> **Model (2026-10-25).** The user pays in any UPI app, then shares the success screenshot to Track Pay, picks screenshots from the gallery, or adds the payment by hand. Google ML Kit reads the screenshot on the phone. Track Pay saves the payment as "Not verified", shows it with Looks right, Edit and Undo, and sends a receipt notification. Nothing is started, launched or scanned for in the background.
+> **Model (2026-11-18, current).** Share and gallery intake copy the screenshot into app storage and exit (~1 second) — no OCR at share time, no foreground service. OCR runs later, on demand, from the **Verify Pending** screen; batch scan is resumable per-item. **Verify** creates the payment (`reviewed = true`) — there is no "Not verified" state in the store. Notifications fire on scan begin and complete. See Phase 4-D for the active step specs.
+
+> **Model (2026-10-25, superseded 2026-11-18).** The user pays in any UPI app, then shares the success screenshot to Track Pay, picks screenshots from the gallery, or adds the payment by hand. Google ML Kit reads the screenshot on the phone. Track Pay saves the payment as "Not verified", shows it with Looks right, Edit and Undo, and sends a receipt notification. Nothing is started, launched or scanned for in the background.
 >
 > **Path B (2026-10-22).** ML Kit runs with the bundled model. A small Expo config plugin strips `INTERNET`. Re-verify notify-kit R6, R7 and R10 once it is stripped (`BUILD-TODO.md` OQ 12a).
 
@@ -209,7 +211,9 @@ Runs first. Deletes the old payment-launcher code and nothing else.
     The top bar has no bell. No pending banner. Keep the dev section.
 - **Done when:** Home matches the locked structure in `DESIGN.md` §1; numbers match Step 3.1; saving a payment updates Home at once; checked on a phone in both themes at 130% font scale.
 
-#### Step 4-B.5: Share-receipt pipeline
+#### Step 4-B.5: Share-receipt pipeline (SUPERSEDED 2026-11-18 by 4-D.2)
+
+> **Superseded.** The share-time OCR + result-screen UX is replaced by the pending queue (Phase 4-D). `app/share-receipt.tsx` becomes copy-then-exit intake. The PaddleOCR wrapper + `extractFromLines` from 4-B.5c are kept and reused by 4-D.4. Do not build the OCR or result-screen logic described below; historical spec retained for reference.
 
 - **Build:** replaces the throwaway route. Share image, read with ML Kit, `parseReceipt`, then:
     - success: save a payment (`source: 'receipt'`, `reviewed: false`), delete the image copy, show the result page with amount, payee, date and category, and Looks right, Edit and Undo;
@@ -223,12 +227,14 @@ Runs first. Deletes the old payment-launcher code and nothing else.
 - **Build:** Replace `rn-mlkit-ocr` with `ppu-paddle-ocr` (ONNX Runtime-based PaddleOCR, pre-built npm package — GUARDRAILS §8.3 no amendment). Bundle PP-OCRv6_medium_det.onnx (~62MB) + PP-OCRv6_medium_rec.onnx (~76MB) + character_dict.json (~129KB, 18708 chars) in `assets/models/` (gitignored). **Reference implementation:** `docs/paddleocr-reference/baseline_hybrid.py` (Python, 527 lines, validated 42/44 amount accuracy across 44 screenshots; the source of truth for all parser logic). New line-based parser in `src/domain/receipt/extractFromLines.ts` + 6 sub-extractors (`extractAmount`, `extractDirection`, `extractCounterparty`, `extractDateTime`, `extractApp`, `extractStatus`) replaces `parseReceipt.ts` and `parseDiagnostics.ts`. Full-image OCR, NO crop, NO upscale. B&W fallback via `expo-image-manipulator` toGreyscale only when `no_amount`. Eager OCR init in `_layout.tsx`. Parity test: 44 fixtures in `assets/test-screenshots/` (gitignored) → ≥42/44 amount, 44/44 date/time/direction/counterparty/app/status. Fixtures never committed (§13.8).
 - **Done when:** parity thresholds met; `rn-mlkit-ocr` removed; `npx tsc --noEmit` clean; `npm run lint:guardrails` pass; `npm test` pass; device verify GPay + PhonePe + Navi save ₹1 correctly.
 
-#### Step 4-B.6: Edit, delete, verify, undo
+#### Step 4-B.6: Edit, delete, undo (renamed 2026-11-18; verify moves to 4-D.5)
 
-- **Build:** Looks right sets `reviewed = true`. Edit opens the form (4-B.3) and saves with `reviewed = true`. Undo removes a payment saved in the last session of the result page. Delete asks first, names the payment, and offers an undo message. Reachable from Recent payments and History rows.
-- **Done when:** EVALS S3 and S5 pass; the "Not verified" marker disappears after Looks right or Edit.
+- **Build:** Edit opens the form (4-B.3) and saves. Undo removes a payment saved in the last session. Delete asks first, names the payment, and offers an undo message. Reachable from Recent payments and History rows.
+- **Done when:** EVALS S3 and S5 pass; editing and deleting from Recent payments and History both work.
 
-#### Step 4-B.7: Gallery picker and batch import
+#### Step 4-B.7: Gallery picker and batch import (SUPERSEDED 2026-11-18 by 4-D.2 + 4-D.4)
+
+> **Superseded.** Gallery intake moves to 4-D.2 (copy + pending row, no OCR at pick). Batch scan to pending + batch import moves to 4-D.4. `expo-document-picker` remains the picker dependency. Do not build.
 
 - **Build:** Add from screenshot opens `expo-document-picker` (images, multiple selection; already approved, no permission). Each image goes through the 4-B.5 pipeline. One summary page lists saved, already added and could-not-read counts, with Review for the saved ones. No scanning of the gallery in the background.
 - **Done when:** picking five mixed images (three good, one duplicate, one failed) saves three and reports the rest; EVALS D12 passes.
@@ -241,6 +247,35 @@ Runs first. Deletes the old payment-launcher code and nothing else.
 - **Done when:** the number of payments before and after is equal; totals are equal; the app restarts with the data intact; backup prompt text is shown if anything could be lost (`GUARDRAILS.md` §5.5).
 
 ---
+
+## Phase 4-D: Pending queue (planned 2026-11-18)
+
+> **Model (2026-11-18).** Shares and gallery picks copy the screenshot to app storage and exit — no OCR at share time, no foreground service. OCR runs later, on demand, from the Verify Pending screen. Batch scan is resumable per-item. Verify creates the payment (`reviewed = true`). See `ARCHITECTURE.md` §5, §6, §8.
+
+#### Step 4-D.1: Pending storage (data)
+
+- **Build:** `src/data/pendingItems.ts` — typed store over a JSON index in AsyncStorage at `trackpay.pendingItems.v1` plus image files under `documentDirectory/pending/`. Functions: `ingest(sourceUri, originalName?)` (copy → append → return row), `loadAll()`, `updateOne(id, patch)`, `removeOne(id)` (also deletes the file), `sweepInterrupted()` (demotes any `scanning` row to `unscanned` on boot and returns the recovered count). Every mutation persists before returning. No React, no UI. Tests: round-trip ingest → load → verify, update persists, remove deletes the file, `sweepInterrupted` recovers exactly the stale rows, invalid JSON returns `[]` without throwing.
+- **Done when:** unit tests pass; no UI change; `ARCHITECTURE.md` §5 pending-receipt block matches the implementation.
+
+#### Step 4-D.2: Share intake rework
+
+- **Build:** `app/share-receipt.tsx` shrinks to intake only: read the shared URI (from `route.params.imageUri` or the existing ShareIntentWatcher mechanism), call `ingest(uri)`, call `BackHandler.exitApp()`. No OCR, no parse, no payment save, no result screen. Absorbs the gallery path from 4-B.7 as a second entry point (still just `ingest`, no batch OCR). No notification at share time.
+- **Done when:** on a real phone, share a screenshot → app flashes ~1s and closes → pending row exists and the file is under `documentDirectory/pending/` on next open. Same for gallery pick. `adb logcat` free of payment data.
+
+#### Step 4-D.3: Pending Pod + Verify Pending grid
+
+- **Build:** Pending Pod on Home — horizontal thumbnail strip of up to 5 pending items, `N pending` count, **Verify Pending** button → `/pending/verify`. `/pending/verify` screen: 3-column grid of all pending thumbnails, badge per item (`unscanned` / `scanned` / `error`), **Start scanning** button (calls 4-D.4's batch engine), empty state when nothing is pending. Tap any thumbnail → `/pending/card/[id]`.
+- **Done when:** Pod reflects `loadAll()` count and thumbnails; grid loads every row; tap routes to card; empty-state copy from `COPY.md`.
+
+#### Step 4-D.4: Batch scan engine + resumption + notifications
+
+- **Build:** `src/features/pending/scanEngine.ts` — `startBatch()` iterates `unscanned` items in order: set `scanning` → `recognizeImageWithMeta → extractFromLines` (reuses 4-B.5c's `paddleOcr.ts` and extractors unchanged) → on success set `scanned` with `scanResult`; on refusal set `error` with the refusal reason; on exception set `error` with the exception message. Persist after every item. `scanOne(id)` for the card. Post begin / complete notifications (channel: Receipt confirmations). `sweepInterrupted()` runs on every app boot from `app/_layout.tsx`; if any rows were recovered, show "N unfinished — tap to resume" on the Pending Pod.
+- **Done when:** batch scan on device (GPay/PhonePe/Navi/Paytm) completes end-to-end; mid-scan kill is recoverable on next open; notifications fire; `rawLines` never logged.
+
+#### Step 4-D.5: Pending card + verify-to-payment
+
+- **Build:** `/pending/card/[id]` — image on top half, details on bottom half. Scanned → editable fields (amount, payee, date, category) prefilled from `scanResult`, **Verify** button calls `addPayment(...)` with `reviewed = true` + updates pending row to `verified` + deletes the image + navigates back to the grid; **Discard** deletes the row + image. Unscanned → **Scan** button calls `scanOne(id)`; card updates in place on completion. Duplicate flag if `scanResult.duplicateOfPaymentId` set — user confirms or discards. Reuses `PaymentFormDialog` field primitives from 4-B.3.
+- **Done when:** EVALS D10, D11 pass for the four apps via card verify; discard deletes the image; duplicates are flagged; the verified payment appears on Home/History/recent payments under the usual `dateLabel`.
 
 ## Phase 5: Analytics (plain)
 
