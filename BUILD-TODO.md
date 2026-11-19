@@ -220,32 +220,13 @@ absent from built APK. |
 
 #### Phase 4-D: Pending queue (planned 2026-11-18)
 
-> **Model (2026-11-18).** Shares and gallery picks copy the screenshot to app storage and exit — no OCR at share time, no foreground service. OCR runs later, on demand, from the Verify Pending screen. Batch scan is resumable per-item. Verify creates the payment (`reviewed = true`). See `ARCHITECTURE.md` §5, §6, §8.
-
-#### Step 4-D.1: Pending storage (data)
-
-- **Build:** `src/data/pendingItems.ts` — typed store over a JSON index in AsyncStorage at `trackpay.pendingItems.v1` plus image files under `documentDirectory/pending/`. Functions: `ingest(sourceUri, originalName?)` (copy → append → return row), `loadAll()`, `updateOne(id, patch)`, `removeOne(id)` (also deletes the file), `sweepInterrupted()` (demotes any `scanning` row to `unscanned` on boot and returns the recovered count). Every mutation persists before returning. No React, no UI. Tests: round-trip ingest → load → verify, update persists, remove deletes the file, `sweepInterrupted` recovers exactly the stale rows, invalid JSON returns `[]` without throwing.
-- **Done when:** unit tests pass; no UI change; `ARCHITECTURE.md` §5 pending-receipt block matches the implementation.
-
-#### Step 4-D.2: Share intake rework
-
-- **Build:** `app/share-receipt.tsx` shrinks to intake only: read the shared URI (from `route.params.imageUri` or the existing ShareIntentWatcher mechanism), call `ingest(uri)`, call `BackHandler.exitApp()`. No OCR, no parse, no payment save, no result screen. Absorbs the gallery path from 4-B.7 as a second entry point (still just `ingest`, no batch OCR). No notification at share time.
-- **Done when:** on a real phone, share a screenshot → app flashes ~1s and closes → pending row exists and the file is under `documentDirectory/pending/` on next open. Same for gallery pick. `adb logcat` free of payment data.
-
-#### Step 4-D.3: Pending Pod + Verify Pending grid
-
-- **Build:** Pending Pod on Home — horizontal thumbnail strip of up to 5 pending items, `N pending` count, **Verify Pending** button → `/pending/verify`. `/pending/verify` screen: 3-column grid of all pending thumbnails, badge per item (`unscanned` / `scanned` / `error`), **Start scanning** button (calls 4-D.4's batch engine), empty state when nothing is pending. Tap any thumbnail → `/pending/card/[id]`.
-- **Done when:** Pod reflects `loadAll()` count and thumbnails; grid loads every row; tap routes to card; empty-state copy from `COPY.md`.
-
-#### Step 4-D.4: Batch scan engine + resumption + notifications
-
-- **Build:** `src/features/pending/scanEngine.ts` — `startBatch()` iterates `unscanned` items in order: set `scanning` → `recognizeImageWithMeta → extractFromLines` (reuses 4-B.5c's `paddleOcr.ts` and extractors unchanged) → on success set `scanned` with `scanResult`; on refusal set `error` with the refusal reason; on exception set `error` with the exception message. Persist after every item. `scanOne(id)` for the card. Post begin / complete notifications (channel: Receipt confirmations). `sweepInterrupted()` runs on every app boot from `app/_layout.tsx`; if any rows were recovered, show "N unfinished — tap to resume" on the Pending Pod.
-- **Done when:** batch scan on device (GPay/PhonePe/Navi/Paytm) completes end-to-end; mid-scan kill is recoverable on next open; notifications fire; `rawLines` never logged.
-
-#### Step 4-D.5: Pending card + verify-to-payment
-
-- **Build:** `/pending/card/[id]` — image on top half, details on bottom half. Scanned → editable fields (amount, payee, date, category) prefilled from `scanResult`, **Verify** button calls `addPayment(...)` with `reviewed = true` + updates pending row to `verified` + deletes the image + navigates back to the grid; **Discard** deletes the row + image. Unscanned → **Scan** button calls `scanOne(id)`; card updates in place on completion. Duplicate flag if `scanResult.duplicateOfPaymentId` set — user confirms or discards. Reuses `PaymentFormDialog` field primitives from 4-B.3.
-- **Done when:** EVALS D10, D11 pass for the four apps via card verify; discard deletes the image; duplicates are flagged; the verified payment appears on Home/History/recent payments under the usual `dateLabel`.
+| ID | Step | Status | Evidence / notes |
+|---|---|---|---|
+| 4-D.1 | Pending storage (`src/data/pendingItems.ts`) | [~] | 2026-11-19 — Done, awaiting approval. `src/data/pendingItems.ts` (262 lines) + `src/data/__tests__/pendingItems.test.ts` (254 lines). API: `ingest`, `loadAll`, `updateOne`, `removeOne`, `markVerified` (new beyond spec — consolidates verify's row-update + file-delete), `sweepInterrupted`. Storage: JSON index at `trackpay.pendingItems.v1` + files under `documentDirectory/pending/`. Seams: `setStorage()` (matches `settings.ts`), `setFileSystem()`. Cleanup-on-write-fail in `ingest` deletes the copied file. Checks: `npx tsc --noEmit` clean; `npm test -- src/data/__tests__/pendingItems.test.ts` → **17/17 pass**. No UI, no routes touched. |
+| 4-D.2 | Share intake rework (`share-receipt` = copy + exit; absorbs gallery) | [ ] | Supersedes 4-B.5 intake and 4-B.7 picker. No OCR at share time. |
+| 4-D.3 | Pending Pod on Home + `/pending/verify` grid | [ ] | |
+| 4-D.4 | Batch scan engine + resumption + notifications | [ ] | Reuses 4-B.5c's `paddleOcr.ts` + `extractFromLines.ts` unchanged. |
+| 4-D.5 | Pending card + verify-to-payment | [ ] | Verify creates the payment with `reviewed = true`. |
 
 ### Phase 5: Analytics (plain)
 
