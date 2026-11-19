@@ -1,72 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
-import { Platform, ToastAndroid, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+// Share intake. Copy the shared image into app storage, append a pending
+// row, and exit. No OCR, no parse, no result screen — that all happens
+// later, from the Verify Pending screen (4-D.3 / 4-D.4).
+//
+// Reads the URI from either the ShareIntentWatcher's `fp` query param (the
+// working path since 4-B.1's cache-polling fix) or, as a fallback, from
+// expo-share-intent's `useShareIntent` context. Intake must run before
+// BackHandler.exitApp() — the content:// grant on a shared file is only
+// valid while this Activity is alive.
+
+import { useEffect, useRef } from 'react';
+import { BackHandler } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
-import { recognizeImageWithMeta, recognizeGrayscale } from '../src/ocr/paddleOcr';
-import { extractFromLines } from '../src/domain/receipt/extractFromLines';
-import * as FileSystem from 'expo-file-system/legacy';
-import { usePayments, type Payment } from '../src/data/payments';
-import { useDialog } from '../src/ui/DialogProvider';
-import { PaymentFormDialog } from '../src/ui/PaymentFormDialog';
-import { Button, Card, Money, PayRow, Screen, Text } from '../src/ui';
-import { copy } from '../src/ui/copy';
-import { dateLabel } from '../src/domain/dateLabel';
-import type { ReceiptRefusal } from '../src/domain/receipt/types';
-import { findDuplicate } from '../src/domain/receipt/findDuplicate';
+import { ingest } from '../src/data/pendingItems';
 
-type ResultState =
-  | { kind: 'pending' }
-  | { kind: 'saved'; payment: Payment }
-  | { kind: 'already_added'; existing: Payment }
-  | { kind: 'refused'; reason: ReceiptRefusal['reason'] }
-  | { kind: 'ocr_error' };
-
-const FILE_WAIT_TIMEOUT_MS = 5000;
-const OCR_TIMEOUT_MS = 30000;
-
-async function waitForFile(uri: string, timeoutMs: number): Promise<boolean> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    const info = await FileSystem.getInfoAsync(uri).catch(() => ({ exists: false }));
-    if (info.exists) return true;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  return false;
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ]);
-}
-
-function toast(message: string) {
-  if (Platform.OS === 'android') {
-    try {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
-    } catch {
-      // A toast is only a non-essential acknowledgement.
-    }
-  }
+function ensureFileScheme(uri: string): string {
+  if (uri.startsWith('file://') || uri.startsWith('content://')) return uri;
+  return 'file://' + uri;
 }
 
 export default function ShareReceiptScreen() {
-  const { shareIntent, resetShareIntent } = useShareIntent();
-  const { payments, addPayment, updatePayment, deletePayment } = usePayments();
-  const { open, close } = useDialog();
-  const router = useRouter();
   const params = useLocalSearchParams<{ fp?: string; mtime?: string }>();
-  const [state, setState] = useState<ResultState>({ kind: 'pending' });
-  const processedKey = useRef<string | null>(null);
-  const paymentsRef = useRef(payments);
-  const addPaymentRef = useRef(addPayment);
-  useEffect(() => {
-    paymentsRef.current = payments;
-  }, [payments]);
-  useEffect(() => {
-    addPaymentRef.current = addPayment;
-  }, [addPayment]);
+  const { shareIntent } = useShareIntent();
+  const processed = useRef<string | null>(null);
 
   const filePathFromParam =
     typeof params.fp === 'string' ? decodeURIComponent(params.fp) : undefined;
@@ -75,230 +31,22 @@ export default function ShareReceiptScreen() {
 
   useEffect(() => {
     if (!filePath || !fileKey) return;
-    if (processedKey.current === fileKey) return;
-
-    processedKey.current = fileKey;
-    console.log('[SHARE_PIPE] effect-run', { filePath, mtime: params.mtime });
+    if (processed.current === fileKey) return;
+    processed.current = fileKey;
     let cancelled = false;
-
-    void (async () => {
+    (async () => {
       try {
-        const exists = await waitForFile(filePath, FILE_WAIT_TIMEOUT_MS);
-        console.log('[SHARE_PIPE]', 'file-exists:', exists);
-        if (cancelled) return;
-        if (!exists) {
-          setState({ kind: 'ocr_error' });
-          return;
-        }
-
-        const ocr = await withTimeout(
-          recognizeImageWithMeta(filePath),
-          OCR_TIMEOUT_MS,
-          { lines: [], imageWidth: 0, imageHeight: 0 },
-        );
-        console.log('[SHARE_PIPE]', 'ocr-lines:', ocr.lines.length);
-        ocr.lines.forEach((ln, i) => {
-          console.log(
-            `[SHARE_PIPE] line${i}`,
-            JSON.stringify({ t: ln.text, c: Number(ln.confidence.toFixed(2)), y: ln.box.y }),
-          );
-        });
-        if (cancelled) return;
-        if (ocr.lines.length === 0 || ocr.imageHeight === 0) {
-          setState({ kind: 'ocr_error' });
-          return;
-        }
-
-        let parsed = extractFromLines(ocr.lines, ocr.imageHeight, new Date());
-        console.log('[SHARE_PIPE]', 'parse:', 'reason' in parsed ? parsed.reason : 'ok');
-
-        if ('reason' in parsed && parsed.reason === 'no_amount') {
-          console.log('[SHARE_PIPE]', 'colour no_amount → grayscale fallback');
-          try {
-            const grayOcr = await recognizeGrayscale(filePath);
-            const grayParsed = extractFromLines(grayOcr.lines, grayOcr.imageHeight, new Date());
-            console.log('[SHARE_PIPE]', 'gray-parse:', 'reason' in grayParsed ? grayParsed.reason : 'ok');
-            if (!('reason' in grayParsed)) {
-              console.log('[SHARE_PIPE]', 'grayscale rescued');
-              parsed = grayParsed;
-            }
-          } catch (e) {
-            console.log('[SHARE_PIPE]', 'grayscale error:', e instanceof Error ? e.message : String(e));
-          }
-        }
-
-        if ('reason' in parsed) {
-          setState({ kind: 'refused', reason: parsed.reason });
-          return;
-        }
-
-        const adapted = {
-          amountPaise: parsed.amountPaise,
-          payeeName: parsed.counterparty ?? 'Unknown',
-          paidAt: parsed.paidAt,
-          upiRef: parsed.upiRef,
-        };
-
-        const duplicate = findDuplicate(paymentsRef.current, adapted);
-        console.log('[SHARE_PIPE]', 'dup:', !!duplicate);
-        if (duplicate) {
-          setState({ kind: 'already_added', existing: duplicate });
-          return;
-        }
-
-        const payment = await addPaymentRef.current({
-          amountPaise: adapted.amountPaise,
-          payeeName: adapted.payeeName,
-          label: null,
-          category: 'Other',
-          createdAt: adapted.paidAt ?? new Date(),
-          paidAt: adapted.paidAt,
-          upiRef: adapted.upiRef,
-          source: 'receipt',
-          reviewed: false,
-        });
-        console.log('[SHARE_PIPE]', 'saved:', !!payment);
-        console.log('[SHARE_PIPE] about-to-set-saved', { cancelled });
-        if (!cancelled) setState({ kind: 'saved', payment });
+        await ingest(ensureFileScheme(filePath));
       } catch (e) {
-        if (!cancelled) {
-          console.log('[SHARE_PIPE]', 'error:', e instanceof Error ? e.message : 'unknown');
-          setState({ kind: 'ocr_error' });
-        }
+        console.warn('[share-receipt] ingest failed', e);
       } finally {
-        FileSystem.deleteAsync(filePath, { idempotent: true }).catch(() => {});
+        if (!cancelled) BackHandler.exitApp();
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [filePath, fileKey, params.mtime]);
+  }, [filePath, fileKey]);
 
-  const handleLooksRight = async (payment: Payment) => {
-    await updatePayment(payment.id, { reviewed: true });
-    resetShareIntent();
-    router.replace('/');
-  };
-
-  const handleEdit = (payment: Payment) => {
-    open({
-      children: (
-        <PaymentFormDialog
-          mode="edit"
-          initial={payment}
-          onSaved={async (input) => {
-            await updatePayment(payment.id, { ...input, reviewed: true });
-            close();
-            resetShareIntent();
-            router.replace('/');
-          }}
-          onCancel={close}
-        />
-      ),
-    });
-  };
-
-  const handleUndo = async (payment: Payment) => {
-    await deletePayment(payment.id);
-    resetShareIntent();
-    toast('Payment deleted');
-    router.replace('/');
-  };
-
-  const handleClose = () => {
-    resetShareIntent();
-    router.replace('/');
-  };
-
-  const renderPaymentDetails = (payment: Payment) => (
-    <Card style={{ gap: 12 }}>
-      <Money paise={payment.amountPaise} style={{ fontSize: 28 }} />
-      <Text>{`${copy.to}: ${payment.payeeName}`}</Text>
-      <Text>{`${copy.date}: ${dateLabel(new Date(payment.paidAt ?? payment.createdAt), new Date())}`}</Text>
-      <Text>{`${copy.category}: ${payment.category}`}</Text>
-    </Card>
-  );
-
-  const renderCouldNotRead = () => (
-    <>
-      <Text style={{ fontSize: 20 }}>Couldn&apos;t read</Text>
-      <Text variant="muted">{copy.couldntRead}</Text>
-      <Button variant="secondary" onPress={handleClose}>
-        {copy.enterManually}
-      </Button>
-      <Button variant="text" onPress={handleClose}>
-        {copy.close}
-      </Button>
-    </>
-  );
-
-  if (state.kind === 'pending') {
-    return (
-      <Screen>
-        <Text>Reading screenshot…</Text>
-      </Screen>
-    );
-  }
-
-  if (state.kind === 'saved') {
-    return (
-      <Screen>
-        <View style={{ gap: 16 }}>
-          <Text style={{ fontSize: 20 }}>{copy.paymentAdded}</Text>
-          {renderPaymentDetails(state.payment)}
-          <Text variant="muted">{copy.checkThese}</Text>
-          <Button onPress={() => void handleLooksRight(state.payment)}>
-            {copy.looksRight}
-          </Button>
-          <Button variant="secondary" onPress={() => handleEdit(state.payment)}>
-            {copy.edit}
-          </Button>
-          <Button variant="text" onPress={() => void handleUndo(state.payment)}>
-            {copy.undo}
-          </Button>
-        </View>
-      </Screen>
-    );
-  }
-
-  if (state.kind === 'already_added') {
-    const { existing } = state;
-    return (
-      <Screen>
-        <View style={{ gap: 16 }}>
-          <Text style={{ fontSize: 20 }}>{copy.paymentAdded}</Text>
-          <Text variant="muted">{copy.alreadyAdded}</Text>
-          <PayRow
-            avatarLetter={(existing.payeeName || 'U')[0].toUpperCase()}
-            name={existing.label ?? existing.payeeName}
-            amountPaise={existing.amountPaise}
-            status="Done"
-            category={existing.category}
-            date={dateLabel(new Date(existing.paidAt ?? existing.createdAt), new Date())}
-            notVerified={!existing.reviewed}
-          />
-          <Button onPress={handleClose}>{copy.done}</Button>
-        </View>
-      </Screen>
-    );
-  }
-
-  if (
-    state.kind === 'ocr_error' ||
-    (state.kind === 'refused' &&
-      (state.reason === 'unreadable' || state.reason === 'no_amount'))
-  ) {
-    return <Screen><View style={{ gap: 16 }}>{renderCouldNotRead()}</View></Screen>;
-  }
-
-  return (
-    <Screen>
-      <View style={{ gap: 16 }}>
-        <Text style={{ fontSize: 20 }}>Not a successful payment</Text>
-        <Text variant="muted">{copy.notSuccessful}</Text>
-        <Button onPress={handleClose}>{copy.close}</Button>
-      </View>
-    </Screen>
-  );
+  return null;
 }
