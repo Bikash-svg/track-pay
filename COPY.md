@@ -75,6 +75,23 @@ Every piece of user-visible text, grouped by screen. Generated from `DESIGN.md`;
 - Review
 - Done
 
+## Pending receipts (Home pod and Verify Pending)
+
+- 1 pending receipt
+- {n} pending receipts
+- Verify Pending
+- Start scanning
+- Not scanned
+- Scanning
+- Ready
+- Verified
+- Error
+- Loading…
+- No pending receipts.
+- Receipt not found.
+- Back
+- Pending receipt
+
 ## Analytics (title "Analytics", month picker "{Month} ▾")
 
 - Analytics

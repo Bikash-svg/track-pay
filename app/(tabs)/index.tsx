@@ -18,6 +18,7 @@ import { usePayments } from '../../src/data/payments';
 import { PaymentFormDialog } from '../../src/ui/PaymentFormDialog';
 import { getProfile } from '../../src/data/settings';
 import { greeting } from '../../src/domain/greeting';
+import { PendingPod } from '../../src/features/pending/PendingPod';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -80,6 +81,7 @@ export default function HomeScreen() {
         <Chip>{month}</Chip>
       </View>
       <SpendCard stats={stats} month={month} />
+      <PendingPod />
 
       <Button variant="primary" disabled accessibilityLabel="Add from screenshot — coming soon">
         {copy.addFromScreenshot}

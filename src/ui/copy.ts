@@ -57,4 +57,23 @@ export const copy = {
   // Notification permission (Phase 8), per COPY.md §2.
   notNow: 'Not now',
   allow: 'Allow',
+  // 4-D.3 pending queue. Strings live here, never inline in the screens.
+  pending: {
+    count: (n: number) =>
+      n === 1 ? '1 pending receipt' : `${n} pending receipts`,
+    verifyPending: 'Verify Pending',
+    startScanning: 'Start scanning',
+    thumbnail: 'Pending receipt',
+    loading: 'Loading…',
+    empty: 'No pending receipts.',
+    notFound: 'Receipt not found.',
+    back: 'Back',
+    badge: {
+      unscanned: 'Not scanned',
+      scanning: 'Scanning',
+      scanned: 'Ready',
+      verified: 'Verified',
+      error: 'Error',
+    },
+  },
 } as const;
