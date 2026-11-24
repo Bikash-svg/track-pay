@@ -20,11 +20,24 @@ jest.mock('../../../data/pendingItems', () => ({
 }));
 
 jest.mock('../../../data/payments', () => ({
-  usePayments: () => ({ addPayment: jest.fn().mockResolvedValue({ id: 'p1' }) }),
+  usePayments: () => ({
+    addPayment: jest.fn().mockResolvedValue({ id: 'p1' }),
+    updatePayment: jest.fn().mockResolvedValue(undefined),
+    deletePayment: jest.fn().mockResolvedValue(undefined),
+    payments: [],
+  }),
 }));
 
 jest.mock('../scanEngine', () => ({
   scanOne: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../../ui/DialogProvider', () => ({
+  useDialog: () => ({
+    open: jest.fn(),
+    close: jest.fn(),
+    visible: false,
+  }),
 }));
 
 function wrap(node: React.ReactNode) {
