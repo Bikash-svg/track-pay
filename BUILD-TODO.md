@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A: 4-D.6 Multi-image share intake — [x] done. Fixed PendingCard immediate-navigate-back bug (reload checked allItems.length instead of rows.length, causing setTimeout goBack to fire before content rendered). 4-D.1 through 4-D.6 all [x]. 4-B.5c stays [~] (PaddleOCR wired; parity test + cleanup pending).
+**Current step, Track A: Phase 4-D complete (4-D.1 through 4-D.6 all [x]). 4-B.5c stays [~] (deferred by owner — PaddleOCR wired + device-tested via 4-D.4; parity test + cleanup pending but not blocking). Next: M1 review or Phase 5 (Analytics).
 
 **Planned follow-on (owner, 2026-11-18):** Phase 4-D pending queue (5 steps). Does not interrupt 4-B.5c — 4-D starts after 4-B.5c is `[x]`. 4-B.5c's `paddleOcr.ts` + `extractFromLines` are reused by 4-D.4 unchanged.
 
