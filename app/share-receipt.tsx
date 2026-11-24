@@ -12,7 +12,11 @@ import { useEffect, useRef } from 'react';
 import { BackHandler } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useShareIntent } from 'expo-share-intent';
+import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ingest } from '../src/data/pendingItems';
+
+const LAST_MTIME_KEY = 'trackpay:shareIntent:lastProcessedMtime';
 
 function ensureFileScheme(uri: string): string {
   if (uri.startsWith('file://') || uri.startsWith('content://')) return uri;
@@ -35,8 +39,29 @@ export default function ShareReceiptScreen() {
     processed.current = fileKey;
     let cancelled = false;
     (async () => {
+      const mtime = Number(params.mtime ?? NaN);
       try {
+        // The watcher can route the same file again within its freshness
+        // window. Never ingest an mtime we have already handled (4-D.2a).
+        const stored = await AsyncStorage.getItem(LAST_MTIME_KEY);
+        if (
+          Number.isFinite(mtime) &&
+          stored !== null &&
+          mtime <= Number(stored)
+        ) {
+          return;
+        }
         await ingest(ensureFileScheme(filePath));
+        if (Number.isFinite(mtime)) {
+          await AsyncStorage.setItem(LAST_MTIME_KEY, String(mtime));
+        }
+        // Delete the cache copy so a later cold open cannot ingest it again.
+        // Same scheme handling as the read path above.
+        try {
+          await FileSystem.deleteAsync(ensureFileScheme(filePath), {
+            idempotent: true,
+          });
+        } catch {}
       } catch (e) {
         console.warn('[share-receipt] ingest failed', e);
       } finally {

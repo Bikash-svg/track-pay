@@ -18,6 +18,9 @@ function ShareIntentWatcher() {
   // Track (path, mtime), not just path. If expo-share-intent reuses the same
   // filename for a new share, mtime will differ and we still route.
   const lastSeen = useRef<{ path: string; mtime: number } | null>(null);
+  // A share fires once per mtime per session. Prevents a second navigation
+  // for the same file while the intake screen is still mounting (4-D.2a).
+  const lastFiredMtime = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,8 +57,10 @@ function ShareIntentWatcher() {
               ) {
                 continue;
               }
-              if (now - mtime >= 30) continue;
+              if (lastFiredMtime.current === mtime) continue;
+              if (now - mtime >= 5) continue;
               lastSeen.current = { path: fp, mtime };
+              lastFiredMtime.current = mtime;
               console.log('[SHARE_WATCH] route', fp, 'mtime', mtime);
               setTimeout(() => {
                 if (!cancelled) {
