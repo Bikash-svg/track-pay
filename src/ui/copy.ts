@@ -11,7 +11,7 @@ export const copy = {
   // 4-B.7 batch result: "Review" button for the saved payments.
   review: 'Review',
   history: 'History',
-  addFromScreenshot: 'Add from screenshot',
+  addFromScreenshot: 'Select receipts from gallery',
   addManually: 'Add manually',
   shareHint: 'Pay in any UPI app, then share the success screenshot here.',
   basedOnPayments: 'Based on payments recorded in Track Pay',

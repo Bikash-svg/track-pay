@@ -106,7 +106,7 @@ export default function HomeScreen() {
       <Button
         variant="primary"
         onPress={handleAddFromGallery}
-        accessibilityLabel="Add from gallery"
+        accessibilityLabel="Select receipts from gallery"
       >
         {copy.addFromScreenshot}
       </Button>
