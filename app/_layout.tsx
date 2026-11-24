@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { ShareIntentProvider } from 'expo-share-intent';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,9 +7,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DialogProvider } from '../src/ui/DialogProvider';
 import { ThemeProvider } from '../src/ui/useTheme';
 import { SplashGate } from '../src/ui/SplashGate';
+import { Text } from '../src/ui';
 import { PaymentsProvider } from '../src/data/payments';
 import '../src/notifications/spike';
 import { getOcrService } from '../src/ocr/paddleOcr';
+import { sweepInterrupted } from '../src/data/pendingItems';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -89,12 +91,25 @@ function ShareIntentWatcher() {
 }
 
 export default function RootLayout() {
+  const [unfinished, setUnfinished] = useState<number>(0);
+
   useEffect(() => {
     // TEMP DISABLED 2026-11-08: onnx runtime crash at boot.
     // Re-enable after verifying onnx native module works.
     // getOcrService().catch(() => {
     //   // Silent — OCR will retry on first use if eager init fails
     // });
+    sweepInterrupted().then((n) => setUnfinished(n));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void sweepInterrupted().then((n) => {
+      if (!cancelled) setUnfinished(n);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -107,6 +122,12 @@ export default function RootLayout() {
                 <ShareIntentWatcher />
                 <Stack screenOptions={{ headerShown: false }} />
               </SplashGate>
+              {unfinished > 0 && (
+                <Text style={{ margin: 8, fontSize: 16 }}>
+                  {unfinished} unfinished{
+                    unfinished > 1 ? ' receipts' : ' receipt'
+                  }</Text>
+              )}
             </DialogProvider>
           </PaymentsProvider>
         </ShareIntentProvider>

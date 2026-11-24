@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, ToastAndroid } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { Button } from '../../src/ui/Button';
 import { Chip } from '../../src/ui/Chip';
 import { Field } from '../../src/ui/Field';
@@ -19,6 +20,7 @@ import { PaymentFormDialog } from '../../src/ui/PaymentFormDialog';
 import { getProfile } from '../../src/data/settings';
 import { greeting } from '../../src/domain/greeting';
 import { PendingPod } from '../../src/features/pending/PendingPod';
+import { ingest } from '../../src/data/pendingItems';
 
 const DEV_PRESETS = [
   { label: 'Default (0 / null)', spent: 0, limit: null },
@@ -50,6 +52,7 @@ export default function HomeScreen() {
   const [devLimit, setDevLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
   const [devPaymentCount, setDevPaymentCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { payments, addPayment, updatePayment } = usePayments();
   const { open, close } = useDialog();
   const now = new Date();
@@ -74,6 +77,23 @@ export default function HomeScreen() {
   const recentPayments = payments.slice(0, 5);
   const showRealPayments = recentPayments.length > 0;
 
+  const handleAddFromGallery = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        multiple: true,
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      for (const file of result.assets) {
+        await ingest(file.uri, file.name);
+      }
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      ToastAndroid.show('Failed to pick images', ToastAndroid.SHORT);
+    }
+  };
+
   return (
     <Screen padTop={false}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -81,9 +101,13 @@ export default function HomeScreen() {
         <Chip>{month}</Chip>
       </View>
       <SpendCard stats={stats} month={month} />
-      <PendingPod />
+      <PendingPod key={refreshKey} />
 
-      <Button variant="primary" disabled accessibilityLabel="Add from screenshot — coming soon">
+      <Button
+        variant="primary"
+        onPress={handleAddFromGallery}
+        accessibilityLabel="Add from gallery"
+      >
         {copy.addFromScreenshot}
       </Button>
       <Button
