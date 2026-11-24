@@ -17,12 +17,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function ShareIntentWatcher() {
   const router = useRouter();
-  // Track (path, mtime), not just path. If expo-share-intent reuses the same
-  // filename for a new share, mtime will differ and we still route.
-  const lastSeen = useRef<{ path: string; mtime: number } | null>(null);
-  // A share fires once per mtime per session. Prevents a second navigation
-  // for the same file while the intake screen is still mounting (4-D.2a).
-  const lastFiredMtime = useRef<number | null>(null);
+  const hasFired = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,46 +28,23 @@ function ShareIntentWatcher() {
           if (cacheDir) {
             const files = await FileSystem.readDirectoryAsync(cacheDir);
             const now = Date.now() / 1000;
+            let hasFresh = false;
             for (const f of files) {
               const lower = f.toLowerCase();
-              if (
-                !lower.endsWith('.jpg') &&
-                !lower.endsWith('.jpeg') &&
-                !lower.endsWith('.png')
-              ) {
-                continue;
-              }
+              if (!lower.endsWith('.jpg') && !lower.endsWith('.jpeg') && !lower.endsWith('.png')) continue;
               const fp = `${cacheDir}${f}`;
               const info = await FileSystem.getInfoAsync(fp);
-              if (
-                !info.exists ||
-                info.isDirectory ||
-                !info.modificationTime
-              ) {
-                continue;
+              if (!info.exists || info.isDirectory || !info.modificationTime) continue;
+              if (now - info.modificationTime < 5) {
+                hasFresh = true;
+                break;
               }
-              const mtime = info.modificationTime;
-              if (
-                lastSeen.current &&
-                lastSeen.current.path === fp &&
-                lastSeen.current.mtime === mtime
-              ) {
-                continue;
-              }
-              if (lastFiredMtime.current === mtime) continue;
-              if (now - mtime >= 5) continue;
-              lastSeen.current = { path: fp, mtime };
-              lastFiredMtime.current = mtime;
-              console.log('[SHARE_WATCH] route', fp, 'mtime', mtime);
-              setTimeout(() => {
-                if (!cancelled) {
-                  router.replace({
-                    pathname: '/share-receipt',
-                    params: { fp, mtime: String(mtime) },
-                  });
-                }
-              }, 50);
-              break;
+            }
+            if (hasFresh && !hasFired.current) {
+              hasFired.current = true;
+              console.log('[SHARE_WATCH] fresh files detected, routing to intake');
+              router.replace('/share-receipt');
+              break; // stop polling after routing
             }
           }
         } catch (err) {
