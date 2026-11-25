@@ -12,6 +12,8 @@ import { TrajectoryChart } from '../../src/features/analytics/TrajectoryChart';
 import { CategoryBars } from '../../src/features/analytics/CategoryBars';
 import { WeekdayBars } from '../../src/features/analytics/WeekdayBars';
 import { TopPayees } from '../../src/features/analytics/TopPayees';
+import { MonthlyTrend } from '../../src/features/analytics/MonthlyTrend';
+import { MonthCalendar } from '../../src/features/analytics/MonthCalendar';
 import { paceSummary } from '../../src/domain/paceSummary';
 
 export default function AnalyticsScreen() {
@@ -47,6 +49,12 @@ export default function AnalyticsScreen() {
         month={now.getMonth()}
       />
       <TopPayees
+        payments={payments}
+        year={now.getFullYear()}
+        month={now.getMonth()}
+      />
+      <MonthlyTrend payments={payments} limit={null} now={now} />
+      <MonthCalendar
         payments={payments}
         year={now.getFullYear()}
         month={now.getMonth()}
