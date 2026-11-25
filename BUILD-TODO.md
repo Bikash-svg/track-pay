@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A: Phase 4-D complete (4-D.1 through 4-D.6 all [x]). 4-B.5c stays [~] (deferred by owner — PaddleOCR wired + device-tested via 4-D.4; parity test + cleanup pending but not blocking). Next: M1 review or Phase 5 (Analytics).
+**Current step, Track A: 5.4 Spending trajectory (plain chart) — [ ] ready to start. 5.1 and 5.2 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
 
 **Planned follow-on (owner, 2026-11-18):** Phase 4-D pending queue (5 steps). Does not interrupt 4-B.5c — 4-D starts after 4-B.5c is `[x]`. 4-B.5c's `paddleOcr.ts` + `extractFromLines` are reused by 4-D.4 unchanged.
 
@@ -233,8 +233,8 @@ absent from built APK. |
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 5.1 | Analytics maths (domain) | [ ] | |
-| 5.2 | Pace summary | [ ] | |
+| 5.1 | Analytics maths (domain) | [x] | 2026-11-25 — In progress. src/domain/analytics.ts (pure TS) + src/domain/__tests__/analytics.test.ts (22 tests). Functions: monthlyTotal, sameDayComparison, cumulativeSpendPerDay, straightLineCeiling, categoryTotals, weekdayTotals, topFivePayees, daysWithoutPayment, daysInMonth, projectedMonthEnd. Reuses daysInMonth from monthStats. tsc clean; guardrails passed; tests 262/262 (31 suites). |
+| 5.2 | Pace summary | [x] | 2026-11-25 — In progress. `src/domain/paceSummary.ts` (`paceSummary(payments, limit, now)` → `PaceSummary`) + `src/domain/__tests__/paceSummary.test.ts` (13 tests). Reuses `monthlyTotal`/`sameDayComparison` from analytics and `daysElapsed`/`daysInMonth` from monthStats. tsc clean; guardrails passed; tests 275/275 (32 suites). |
 | 5.3 | Unconfirmed box | [-] | Retired 2026-10-25. Nothing is pending or unconfirmed any more. |
 | 5.4 | Spending trajectory (plain chart) | [ ] | |
 | 5.5 | Categories and weekdays | [ ] | |
@@ -480,6 +480,8 @@ D1 to D12 are in `AI-RULES.md` section 4. Add new ones here with the date and wh
 | 2026-10-18 | A 1.2 Plain primitives | Housekeeping: light primary uses #0369a1 in Track A (owner's open-question-2 default from Step 1.1, not a Step 1.1 mistake; the test correctly asserts tokens.primary). Track B D7.2 will introduce primaryText and reconcile with DESIGN-TOKENS.md's #0284c7. primitives.test.tsx hex assertions will need updating in Track B D7.2 when PROPOSED primaryText tokens become real. Not a 1.2 gap. nvm is not installed in this environment; node -v is v20.19.4. The 'always nvm use' rule cannot run as written. Verify node -v each session instead. | BUILD-TODO.md |
 | 2026-10-18 | A 1.1 Semantic tokens | The commit "Step A1.1: Semantic tokens" also contained Step 1.2 primitives, started before 1.1 was approved. Step 1.1 is now approved by the owner. | BUILD-TODO.md |
 | 2026-10-18 | A 1.1 Semantic tokens | useTheme.ts contained JSX and was renamed to useTheme.tsx after CI failed. | BUILD-TODO.md |
+| 2026-11-25 | A 5.1 Analytics maths (domain) | Built src/domain/analytics.ts (pure TS, no React/platform/storage/console/Date.now) + src/domain/__tests__/analytics.test.ts (22 tests). Functions: monthlyTotal, sameDayComparison, cumulativeSpendPerDay, straightLineCeiling, categoryTotals, weekdayTotals, topFivePayees, daysWithoutPayment, daysInMonth, projectedMonthEnd. Reuses daysInMonth from monthStats. Excludes status !== 'success'. tsc clean; guardrails passed; npm test 262/262 (31 suites). | src/domain/analytics.ts, src/domain/__tests__/analytics.test.ts, BUILD-TODO.md |
+| 2026-11-25 | A 5.2 Pace summary | Built src/domain/paceSummary.ts (paceSummary(payments, limit, now) → PaceSummary) + src/domain/__tests__/paceSummary.test.ts (13 tests). Reuses monthlyTotal/sameDayComparison from analytics and daysElapsed/daysInMonth from monthStats. Covers A9 example, empty month, no limit, up/down/same direction, null percentChange, failed-row exclusion, 28/29/30/31 day months. tsc clean; guardrails passed; npm test 275/275 (32 suites). | src/domain/paceSummary.ts, src/domain/__tests__/paceSummary.test.ts, BUILD-TODO.md |
 | 2026-10-18 | A 1.2 Plain primitives | CI then failed on type errors in the committed primitives (palette names that do not exist, loose string types). Fixed in the commit "Step A1.2 WIP", which is NOT an approved step. | BUILD-TODO.md |
 | 2026-10-18 | A 1.1 Semantic tokens | Correction: Metro resolves tsconfig paths by default (tsconfigPaths ?? true in expo/node_modules/@expo/cli/build/src/start/server/metro/instantiateMetro.js:209). The "known gap" in the 1.1 report was wrong. @/ imports are allowed; do not add extraNodeModules or metro.config.js. | BUILD-TODO.md |
 | 2026-10-18 | A 1.2 | Plain primitives done and approved. PrimitivesDemo accepted as the screen for the Done-when (option a). Rename useTheme.ts -> useTheme.tsx approved. | BUILD-TODO.md |
