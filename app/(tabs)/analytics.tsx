@@ -2,7 +2,7 @@
 // plus a short pace summary. The monthly limit is not editable until Step 7.3,
 // so the chart is given `limit = null` here; the ceiling appears as soon as a
 // limit is supplied.
-import React from 'react';
+import React, { useState } from 'react';
 import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
 import { formatMoney } from '../../src/ui/Money';
@@ -19,6 +19,7 @@ import { paceSummary } from '../../src/domain/paceSummary';
 export default function AnalyticsScreen() {
   const { payments } = usePayments();
   const now = new Date();
+  const [displayDate, setDisplayDate] = useState(() => new Date());
   const pace = paceSummary(payments, null, now);
   const versus = pace.versusLastMonth;
 
@@ -56,8 +57,9 @@ export default function AnalyticsScreen() {
       <MonthlyTrend payments={payments} limit={null} now={now} />
       <MonthCalendar
         payments={payments}
-        year={now.getFullYear()}
-        month={now.getMonth()}
+        displayDate={displayDate}
+        today={now}
+        onChangeMonth={setDisplayDate}
       />
     </Screen>
   );
