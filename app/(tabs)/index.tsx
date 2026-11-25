@@ -13,6 +13,8 @@ import { useTheme } from '../../src/ui/useTheme';
 import { router } from 'expo-router';
 import { copy } from '../../src/ui/copy';
 import { computeMonthStats } from '../../src/domain/monthStats';
+import { paceSummary } from '../../src/domain/paceSummary';
+import { formatMoney } from '../../src/ui/Money';
 import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
 import { usePayments } from '../../src/data/payments';
@@ -62,6 +64,12 @@ export default function HomeScreen() {
     .reduce((sum, payment) => sum + payment.amountPaise, 0);
   const limit: number | null = null;
   const stats = computeMonthStats({ spent, limit, now });
+  const pace = paceSummary(payments, null, now);
+  const versus = pace.versusLastMonth;
+  const versusText =
+    versus.percentChange === null
+      ? `vs last month, same days: — (${formatMoney(Math.abs(versus.diff))})`
+      : `vs last month, same days: ${versus.diff > 0 ? '+' : ''}${versus.percentChange}% (${formatMoney(Math.abs(versus.diff))})`;
   const month = now.toLocaleString('en-IN', { month: 'long' });
 
   useEffect(() => {
@@ -101,6 +109,21 @@ export default function HomeScreen() {
         <Chip>{month}</Chip>
       </View>
       <SpendCard stats={stats} month={month} />
+      <View testID="analytics-glance">
+        <Text>This month at a glance</Text>
+        <Text>{`Daily pace ${formatMoney(pace.dailyAverage)}`}</Text>
+        <Text>{`Month-end estimate ${formatMoney(pace.projectedMonthEnd)} (estimate)`}</Text>
+        <Text>{versusText}</Text>
+        <View testID="analytics-glance-link">
+          <Button
+            variant="text"
+            onPress={() => router.push('/analytics')}
+            accessibilityLabel="Analytics"
+          >
+            Analytics
+          </Button>
+        </View>
+      </View>
       <PendingPod key={refreshKey} />
 
       <Button
@@ -125,8 +148,6 @@ export default function HomeScreen() {
         {copy.addManually}
       </Button>
       <Text variant="muted">{copy.shareHint}</Text>
-
-      {/* This month at a glance slot — Step 5.9 */}
 
       <Text variant="secondary">{copy.recentPayments}</Text>
       {showRealPayments ? (
