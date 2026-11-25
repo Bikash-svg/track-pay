@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A: 5.5 Categories and weekdays — [~] in progress. 5.1/5.2/5.4 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
+**Current step, Track A: 5.6 Top five payees — [ ] ready to start. 5.1/5.2/5.4/5.5 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]). — [~] in progress. 5.1/5.2/5.4 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
 
 **Planned follow-on (owner, 2026-11-18):** Phase 4-D pending queue (5 steps). Does not interrupt 4-B.5c — 4-D starts after 4-B.5c is `[x]`. 4-B.5c's `paddleOcr.ts` + `extractFromLines` are reused by 4-D.4 unchanged.
 
@@ -237,7 +237,7 @@ absent from built APK. |
 | 5.2 | Pace summary | [x] | 2026-11-25 — In progress. `src/domain/paceSummary.ts` (`paceSummary(payments, limit, now)` → `PaceSummary`) + `src/domain/__tests__/paceSummary.test.ts` (13 tests). Reuses `monthlyTotal`/`sameDayComparison` from analytics and `daysElapsed`/`daysInMonth` from monthStats. tsc clean; guardrails passed; tests 275/275 (32 suites). |
 | 5.3 | Unconfirmed box | [-] | Retired 2026-10-25. Nothing is pending or unconfirmed any more. |
 | 5.4 | Spending trajectory (plain chart) | [x] | 2026-11-25 — In progress. `src/features/analytics/TrajectoryChart.tsx` (plain Views, no chart library; one bar per day; ceiling behind only when a positive limit is set; today bar in `tokens.primary`; text + `accessibilityLabel` summary). `app/(tabs)/analytics.tsx` now renders the chart plus daily average, projected month end (estimate) and vs last month. Tests: `src/features/analytics/__tests__/TrajectoryChart.test.tsx` (8 tests: bar count 28/29/30/31, today marker, zero spend, over limit, ceiling only with limit, summary + a11y label). tsc clean; guardrails passed; tests 283/283 (33 suites). Device check not run. |
-| 5.5 | Categories and weekdays | [~] | 2026-11-25 — In progress. `src/features/analytics/CategoryBars.tsx` (5 rows, proportional bar, amount, empty state) + `src/features/analytics/WeekdayBars.tsx` (7 bars Sun–Sat, empty state), both plain Views with tokens only. `app/(tabs)/analytics.tsx` renders them below the trajectory chart. Tests: CategoryBars (5) incl. A2 sum check; WeekdayBars (3) incl. 7 bars + empty state. tsc clean; guardrails passed; tests 291/291 (35 suites). Device check not run. |
+| 5.5 | Categories and weekdays | [x] | 2026-11-25 — In progress. `src/features/analytics/CategoryBars.tsx` (5 rows, proportional bar, amount, empty state) + `src/features/analytics/WeekdayBars.tsx` (7 bars Sun–Sat, empty state), both plain Views with tokens only. `app/(tabs)/analytics.tsx` renders them below the trajectory chart. Tests: CategoryBars (5) incl. A2 sum check; WeekdayBars (3) incl. 7 bars + empty state. tsc clean; guardrails passed; tests 291/291 (35 suites). Device check not run. |
 | 5.6 | Top five payees | [ ] | |
 | 5.7 | Monthly trend and calendar | [ ] | |
 | 5.8 | Calendar upgrades (optional, ask first) | [ ] | |
