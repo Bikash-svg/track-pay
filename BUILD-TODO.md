@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A: 5.6 Top five payees — [ ] ready to start. 5.1/5.2/5.4/5.5 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]). — [~] in progress. 5.1/5.2/5.4 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
+**Current step, Track A: 5.6 Top five payees — [ ] ready to start. 5.1/5.2/5.4/5.5 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
 
 **Planned follow-on (owner, 2026-11-18):** Phase 4-D pending queue (5 steps). Does not interrupt 4-B.5c — 4-D starts after 4-B.5c is `[x]`. 4-B.5c's `paddleOcr.ts` + `extractFromLines` are reused by 4-D.4 unchanged.
 
