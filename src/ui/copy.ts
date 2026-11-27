@@ -86,4 +86,5 @@ export const copy = {
       error: 'Error',
     },
   },
+  noSpendingThisMonth: 'No spending this month',
 } as const;

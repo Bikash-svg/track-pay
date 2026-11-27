@@ -2,6 +2,7 @@
 export type TokenName =
   | 'canvas'
   | 'card'
+  | 'container'
   | 'interactive'
   | 'border'
   | 'primary'
@@ -15,11 +16,16 @@ export type TokenName =
   | 'positiveTint'
   | 'cautionTint'
   | 'negativeTint'
-  | 'scrim';
+  | 'scrim'
+  | 'fontDisplay'
+  | 'fontHeading'
+  | 'fontBody'
+  | 'fontNumeric';
 
 export const TOKEN_NAMES: readonly TokenName[] = [
   'canvas',
   'card',
+  'container',
   'interactive',
   'border',
   'primary',
@@ -34,4 +40,8 @@ export const TOKEN_NAMES: readonly TokenName[] = [
   'cautionTint',
   'negativeTint',
   'scrim',
+  'fontDisplay',
+  'fontHeading',
+  'fontBody',
+  'fontNumeric',
 ];

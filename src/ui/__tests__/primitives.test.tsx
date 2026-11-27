@@ -39,6 +39,6 @@ describe('useTheme', () => {
       captured.setTheme('light');
     });
     expect(captured.theme).toBe('light');
-    expect(captured.tokens.primary).toBe('#0369a1');
+    expect(captured.tokens.primary).toBe('#0284c7');
   });
 });

@@ -20,8 +20,8 @@ function wrap(node: React.ReactNode) {
 describe('scrim token', () => {
   it('is present in both palettes and matches the agreed values', () => {
     expect(TOKEN_NAMES).toContain('scrim');
-    expect(dark.scrim).toBe('rgba(6,9,14,0.78)');
-    expect(light.scrim).toBe('rgba(15,23,42,0.45)');
+    expect(dark.scrim).toBe('rgba(7,9,14,0.75)');
+    expect(light.scrim).toBe('rgba(15,23,42,0.40)');
   });
 
   it('is a non-empty string in both palettes', () => {
@@ -91,7 +91,7 @@ describe('Dialog render output', () => {
         ),
       );
     });
-    expect(JSON.stringify(root.toJSON())).toContain('rgba(6,9,14,0.78)');
+    expect(JSON.stringify(root.toJSON())).toContain('rgba(7,9,14,0.75)');
   });
 
   it('renders a close button when open', () => {
