@@ -4,6 +4,18 @@ import { ShareIntentProvider } from 'expo-share-intent';
 import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
+import {
+  JetBrainsMono_500Medium,
+  JetBrainsMono_600SemiBold,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { DialogProvider } from '../src/ui/DialogProvider';
 import { ThemeProvider } from '../src/ui/useTheme';
 import { SplashGate } from '../src/ui/SplashGate';
@@ -64,6 +76,15 @@ function ShareIntentWatcher() {
 
 export default function RootLayout() {
   const [unfinished, setUnfinished] = useState<number>(0);
+  const [fontsLoaded] = useFonts({
+    JetBrainsMono_500Medium,
+    JetBrainsMono_600SemiBold,
+    JetBrainsMono_700Bold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+  });
 
   useEffect(() => {
     // TEMP DISABLED 2026-11-08: onnx runtime crash at boot.
