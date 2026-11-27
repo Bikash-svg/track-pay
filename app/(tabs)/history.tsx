@@ -3,10 +3,12 @@ import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
 import { Field } from '../../src/ui/Field';
 import { Button } from '../../src/ui/Button';
+import { useDialog } from '../../src/ui/DialogProvider';
 import { usePayments } from '../../src/data/payments';
 import { groupByMonth } from '../../src/features/history/groupByMonth';
 import { searchPayments } from '../../src/features/history/searchPayments';
 import { filterPayments } from '../../src/features/history/filterPayments';
+import { ExportChoices } from '../../src/features/history/ExportChoices';
 import { MonthGroup } from '../../src/features/history/MonthGroup';
 
 // Parses a plain YYYY-MM-DD field into a local calendar date. An invalid or
@@ -34,6 +36,7 @@ function parseDateInput(value: string, endOfDay: boolean): Date | null {
 
 export default function HistoryScreen() {
   const { payments } = usePayments();
+  const { open } = useDialog();
   const [query, setQuery] = useState('');
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState('');
@@ -60,6 +63,28 @@ export default function HistoryScreen() {
   const clearRange = () => {
     setFromText('');
     setToText('');
+  };
+
+  const openExport = () => {
+    open({
+      title: 'Export',
+      children: (
+        <ExportChoices
+          onBackup={() =>
+            open({
+              title: 'Export',
+              subtitle: 'Backup file export is coming soon.',
+            })
+          }
+          onPdf={() =>
+            open({
+              title: 'Export',
+              subtitle: 'Monthly PDF export is coming soon.',
+            })
+          }
+        />
+      ),
+    });
   };
 
   return (
@@ -105,6 +130,9 @@ export default function HistoryScreen() {
           }}
         />
       ))}
+      <Button variant="secondary" onPress={openExport} style={{ marginTop: 16 }}>
+        Export data
+      </Button>
     </Screen>
   );
 }

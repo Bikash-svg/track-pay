@@ -10,6 +10,7 @@ import {
   type Payment,
 } from '../../../data/payments';
 import { setStorage } from '../../../data/settings';
+import { DialogProvider } from '../../../ui/DialogProvider';
 import { MonthGroup } from '../MonthGroup';
 import HistoryScreen from '../../../../app/(tabs)/history';
 
@@ -54,7 +55,9 @@ function renderScreen(node: React.ReactNode) {
         }}
       >
         <ThemeProvider>
-          <PaymentsProvider>{node}</PaymentsProvider>
+          <PaymentsProvider>
+            <DialogProvider>{node}</DialogProvider>
+          </PaymentsProvider>
         </ThemeProvider>
       </SafeAreaProvider>,
     );
