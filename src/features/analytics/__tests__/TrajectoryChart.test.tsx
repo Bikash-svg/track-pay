@@ -41,15 +41,22 @@ function countByPrefix(root: any, prefix: string): number {
   ).length;
 }
 
+function hostByTestID(root: any, testID: string): any {
+  return root.root.findAll(
+    (node: any) => typeof node.type === 'string' && node.props?.testID === testID,
+    { deep: true },
+  )[0];
+}
+
 describe('TrajectoryChart', () => {
-  it('renders one bar per day of the month (31-day month)', () => {
+  it('renders one day marker per day of the month (31-day month)', () => {
     const root = render(
       <TrajectoryChart payments={[]} limit={null} now={new Date(2026, 9, 1)} />,
     );
     expect(countByPrefix(root, 'trajectory-day-')).toBe(31);
   });
 
-  it('renders 28 bars in February 2026, 29 in February 2024, 30 in April', () => {
+  it('renders 28 day markers in February 2026, 29 in February 2024, 30 in April', () => {
     const feb2026 = render(
       <TrajectoryChart payments={[]} limit={null} now={new Date(2026, 1, 1)} />,
     );
@@ -96,17 +103,17 @@ describe('TrajectoryChart', () => {
     const noLimit = render(
       <TrajectoryChart payments={[]} limit={null} now={new Date(2026, 9, 11)} />,
     );
-    expect(countByPrefix(noLimit, 'trajectory-ceiling-')).toBe(0);
+    expect(hostByTestID(noLimit, 'trajectory-ceiling')).toBeUndefined();
 
     const zeroLimit = render(
       <TrajectoryChart payments={[]} limit={0} now={new Date(2026, 9, 11)} />,
     );
-    expect(countByPrefix(zeroLimit, 'trajectory-ceiling-')).toBe(0);
+    expect(hostByTestID(zeroLimit, 'trajectory-ceiling')).toBeUndefined();
 
     const withLimit = render(
       <TrajectoryChart payments={[]} limit={1500000} now={new Date(2026, 9, 11)} />,
     );
-    expect(countByPrefix(withLimit, 'trajectory-ceiling-')).toBe(31);
+    expect(hostByTestID(withLimit, 'trajectory-ceiling')).toBeTruthy();
   });
 
   it('shows a text summary with the ceiling only when a limit is set', () => {

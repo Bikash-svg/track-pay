@@ -60,7 +60,8 @@ describe('TopPayees', () => {
     expect(json).toContain('4. Alice');
     expect(json).toContain('5. Carol');
     expect(json).not.toContain('Frank');
-    expect(json).toContain('₹3 (1)');
+    expect(json).toContain('₹3');
+    expect(json).toContain('(1)');
   });
 
   it('breaks ties by payee name ascending', () => {
@@ -78,7 +79,7 @@ describe('TopPayees', () => {
   it('shows an empty state when there are no payments', () => {
     const root = render(<TopPayees payments={[]} year={2026} month={9} />);
     const json = JSON.stringify(root.toJSON());
-    expect(json).toContain('No payments this month');
+    expect(json).toContain('No spending this month');
     expect(countByPrefix(root, 'top-payee-')).toBe(0);
   });
 

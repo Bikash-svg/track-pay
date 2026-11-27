@@ -80,12 +80,12 @@ describe('CategoryBars', () => {
 
   it('shows an empty state when the month has no payments', () => {
     const root = render(<CategoryBars payments={[]} year={2026} month={9} />);
-    expect(JSON.stringify(root.toJSON())).toContain('No payments this month');
+    expect(JSON.stringify(root.toJSON())).toContain('No spending this month');
   });
 
   it('does not show the empty state when there are payments', () => {
     const payments = [makePayment({ amountPaise: 10000, category: 'Food' })];
     const root = render(<CategoryBars payments={payments} year={2026} month={9} />);
-    expect(JSON.stringify(root.toJSON())).not.toContain('No payments this month');
+    expect(JSON.stringify(root.toJSON())).not.toContain('No spending this month');
   });
 });

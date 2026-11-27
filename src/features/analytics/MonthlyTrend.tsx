@@ -1,14 +1,17 @@
-// Six-month spending trend for Analytics (Step 5.7). Plain Track A: one bar
-// per month (last six, including the current month) scaled to the highest
-// month. The monthly limit is shown as text until Step 7.3 makes it editable.
+// Six-month spending trend for Analytics (Step B D4.4). Restyled to the
+// design system: one bar per month (last six, including the current month)
+// scaled to the highest month, amounts in JetBrains Mono. The monthly limit
+// is shown as text only until Step 7.3 makes it editable.
 //
 // All amounts are integer paise. Colour values come from tokens only.
-
+//
 import React from 'react';
 import { View } from 'react-native';
 import type { Payment } from '../../data/payments';
 import { monthlyTotal } from '../../domain/analytics';
+import { Card } from '../../ui/Card';
 import { formatMoney } from '../../ui/Money';
+import { MetricText } from '../../ui/MetricText';
 import { Text } from '../../ui/Text';
 import { useTheme } from '../../ui/useTheme';
 
@@ -53,8 +56,17 @@ export function MonthlyTrend({ payments, limit, now }: MonthlyTrendProps) {
   const maxTotal = Math.max(...months.map((m) => m.total), 1);
 
   return (
-    <View>
-      <Text>Monthly trend</Text>
+    <Card>
+      <Text
+        style={{
+          fontFamily: tokens.fontHeading,
+          fontSize: 18,
+          fontWeight: '700',
+          color: tokens.text,
+        }}
+      >
+        Monthly spending
+      </Text>
       <View
         testID="trend-bars"
         style={{
@@ -80,13 +92,23 @@ export function MonthlyTrend({ payments, limit, now }: MonthlyTrendProps) {
                 }}
               />
             </View>
-            <Text style={{ fontSize: 9 }}>{monthShortName(m.month)}</Text>
+            <MetricText value={m.total} size="small" />
+            <Text
+              style={{
+                fontFamily: tokens.fontNumeric,
+                fontSize: 9,
+                color: tokens.textMuted,
+                marginTop: 2,
+              }}
+            >
+              {monthShortName(m.month)}
+            </Text>
           </View>
         ))}
       </View>
       {limit !== null && limit > 0 ? (
         <Text variant="muted">Limit: {formatMoney(limit)}</Text>
       ) : null}
-    </View>
+    </Card>
   );
 }

@@ -53,13 +53,13 @@ describe('WeekdayBars', () => {
 
   it('shows an empty state when the month has no payments', () => {
     const root = render(<WeekdayBars payments={[]} year={2026} month={9} />);
-    expect(JSON.stringify(root.toJSON())).toContain('No payments this month');
+    expect(JSON.stringify(root.toJSON())).toContain('No spending this month');
   });
 
   it('does not show the empty state when there are payments', () => {
     // 2026-10-11 is a Sunday.
     const payments = [makePayment({ amountPaise: 5000, createdAt: new Date(2026, 9, 11).getTime() })];
     const root = render(<WeekdayBars payments={payments} year={2026} month={9} />);
-    expect(JSON.stringify(root.toJSON())).not.toContain('No payments this month');
+    expect(JSON.stringify(root.toJSON())).not.toContain('No spending this month');
   });
 });

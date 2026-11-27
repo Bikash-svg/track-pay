@@ -3,6 +3,7 @@
 // so the chart is given `limit = null` here; the ceiling appears as soon as a
 // limit is supplied.
 import React, { useState } from 'react';
+import { View } from 'react-native';
 import { Screen } from '../../src/ui/Screen';
 import { Text } from '../../src/ui/Text';
 import { formatMoney } from '../../src/ui/Money';
