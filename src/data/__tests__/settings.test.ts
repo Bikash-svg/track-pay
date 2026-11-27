@@ -18,6 +18,7 @@ function makeStore() {
     getItem: (key: string) => Promise.resolve(store.get(key) ?? null),
     setItem: (key: string, value: string) =>
       Promise.resolve(void store.set(key, value)),
+    removeItem: (key: string) => Promise.resolve(void store.delete(key)),
     store,
   };
 }

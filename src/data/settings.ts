@@ -6,6 +6,7 @@
 
 const PREFIX = 'trackpay:settings';
 export const THEME_KEY = `${PREFIX}:theme`;
+export const LIMIT_KEY = `${PREFIX}:limit`;
 
 export type ThemeName = 'dark' | 'light' | 'auto';
 
@@ -14,6 +15,7 @@ export type ThemeName = 'dark' | 'light' | 'auto';
 export interface SettingsStorage {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
 }
 
 // The backing client. Swapped by setStorage() — a test seam so the settings
@@ -71,6 +73,10 @@ function setItem(key: string, value: string): Promise<void> {
   return ensureClient().setItem(key, value);
 }
 
+function removeItem(key: string): Promise<void> {
+  return ensureClient().removeItem(key);
+}
+
 // --- Profile (Phase 2.1). Additive keys, so no migration: there is no old
 // profile shape to migrate from. getProfile reads one namespaced key and
 // falls back to DEFAULT_PROFILE for anything it cannot interpret.
@@ -123,4 +129,21 @@ export async function getProfile(): Promise<Profile> {
 
 export async function setProfile(profile: Profile): Promise<void> {
   await setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+// --- Monthly limit (Step 7.3). Optional: null means no limit. Stored as a
+// decimal string of integer paise; an absent or unparsable value means off.
+export async function getLimit(): Promise<number | null> {
+  const raw = await getItem(LIMIT_KEY);
+  if (!raw) return null;
+  const val = parseInt(raw, 10);
+  return isNaN(val) ? null : val;
+}
+
+export async function setLimit(value: number | null): Promise<void> {
+  if (value === null) {
+    await removeItem(LIMIT_KEY);
+  } else {
+    await setItem(LIMIT_KEY, String(value));
+  }
 }

@@ -19,7 +19,7 @@ import { dateLabel } from '../../src/domain/dateLabel';
 import { PayRow } from '../../src/ui/PayRow';
 import { usePayments } from '../../src/data/payments';
 import { PaymentFormDialog } from '../../src/ui/PaymentFormDialog';
-import { getProfile } from '../../src/data/settings';
+import { getProfile, getLimit } from '../../src/data/settings';
 import { greeting } from '../../src/domain/greeting';
 import { PendingPod } from '../../src/features/pending/PendingPod';
 import { ingest } from '../../src/data/pendingItems';
@@ -50,6 +50,7 @@ const DEV_SAMPLE_PAYMENTS = [
 
 export default function HomeScreen() {
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [limit, setLimit] = useState<number | null>(null);
   const [devSpent, setDevSpent] = useState(0);
   const [devLimit, setDevLimit] = useState<number | null>(null);
   const { pendingCount, setPendingCount } = usePendingCount();
@@ -62,9 +63,8 @@ export default function HomeScreen() {
   const spent = payments
     .filter((payment) => payment.status === 'success' && new Date(payment.createdAt) >= monthStart)
     .reduce((sum, payment) => sum + payment.amountPaise, 0);
-  const limit: number | null = null;
   const stats = computeMonthStats({ spent, limit, now });
-  const pace = paceSummary(payments, null, now);
+  const pace = paceSummary(payments, limit, now);
   const versus = pace.versusLastMonth;
   const versusText =
     versus.percentChange === null
@@ -76,6 +76,16 @@ export default function HomeScreen() {
     let mounted = true;
     void getProfile().then((profile) => {
       if (mounted) setFirstName(profile.firstName);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    void getLimit().then((val) => {
+      if (mounted) setLimit(val);
     });
     return () => {
       mounted = false;
