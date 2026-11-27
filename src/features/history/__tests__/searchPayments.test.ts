@@ -67,4 +67,50 @@ describe('searchPayments', () => {
 
     expect(searchPayments(payments, '')).toEqual(payments);
   });
+
+  it('matches an amount exactly', () => {
+    const payments = [
+      makePayment({ id: 'hundred', amountPaise: 10000 }),
+      makePayment({ id: 'twoHundred', amountPaise: 20000 }),
+      makePayment({ id: 'forty', amountPaise: 4000 }),
+    ];
+
+    const result = searchPayments(payments, '100');
+
+    expect(result.map((p) => p.id)).toEqual(['hundred']);
+  });
+
+  it('matches an amount approximately (within tolerance)', () => {
+    const payments = [
+      makePayment({ id: 'hundred', amountPaise: 10000 }),
+      makePayment({ id: 'hundredFive', amountPaise: 10500 }),
+      makePayment({ id: 'twoHundred', amountPaise: 20000 }),
+    ];
+
+    const result = searchPayments(payments, '100');
+
+    expect(result.map((p) => p.id)).toEqual(['hundred', 'hundredFive']);
+  });
+
+  it('does not match an amount when the query is not a number', () => {
+    const payments = [
+      makePayment({ id: 'food', category: 'Food', amountPaise: 20000 }),
+      makePayment({ id: 'other', category: 'Other', amountPaise: 10000 }),
+    ];
+
+    const result = searchPayments(payments, 'food');
+
+    expect(result.map((p) => p.id)).toEqual(['food']);
+  });
+
+  it('handles currency symbols and commas', () => {
+    const payments = [
+      makePayment({ id: 'thousand', amountPaise: 100000 }),
+      makePayment({ id: 'fiveHundred', amountPaise: 50000 }),
+    ];
+
+    const result = searchPayments(payments, '₹1,000');
+
+    expect(result.map((p) => p.id)).toEqual(['thousand']);
+  });
 });
