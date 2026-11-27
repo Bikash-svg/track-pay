@@ -14,6 +14,9 @@ interface MonthGroupProps {
   readonly now: Date;
   readonly defaultOpen: boolean;
   readonly onRowPress: (payment: Payment) => void;
+  // EVALS H4: the month spend always includes every payment in the month,
+  // even when the visible rows are narrowed by History search/filters.
+  readonly totalPaise?: number;
 }
 
 export function MonthGroup({
@@ -23,10 +26,12 @@ export function MonthGroup({
   now,
   defaultOpen,
   onRowPress,
+  totalPaise,
 }: MonthGroupProps) {
   const { tokens } = useTheme();
   const [open, setOpen] = useState(defaultOpen);
-  const monthTotal = payments.reduce((sum, p) => sum + p.amountPaise, 0);
+  const monthTotal =
+    totalPaise ?? payments.reduce((sum, p) => sum + p.amountPaise, 0);
   const monthName = new Date(year, month, 1).toLocaleString('en-IN', {
     month: 'long',
   });
