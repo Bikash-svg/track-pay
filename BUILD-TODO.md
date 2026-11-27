@@ -40,7 +40,7 @@ Stop and ask, with options and a recommended default, when: the step is silent o
 
 The live checklist. The AI model updates this file after every step (`AI-RULES.md` section 5). Track A steps are in `ARCHITECTURE-BUILD-PLAN.md`. Track B steps are in Part B of `DESIGN-BUILD-PLAN.md`. **Finish Track A (milestone M1, approved) before starting Track B.**
 
-**Current step, Track A: [~] 6.1 Monthly groups (History). Phase 5 complete (5.1/5.2/5.4/5.5/5.6/5.7/5.8/5.9 all [x]). 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
+**Current step, Track A: 6.2 Search (History) — [ ] ready to start. 6.1 is [x]. 5.1/5.2/5.4/5.5/5.6/5.7/5.8/5.9 are [x]. 5.3 is RETIRED. 4-B.5c stays [~] (deferred). Phase 4-D complete (4-D.1 through 4-D.6 all [x]).
 
 **Planned follow-on (owner, 2026-11-18):** Phase 4-D pending queue (5 steps). Does not interrupt 4-B.5c — 4-D starts after 4-B.5c is `[x]`. 4-B.5c's `paddleOcr.ts` + `extractFromLines` are reused by 4-D.4 unchanged.
 
@@ -248,7 +248,7 @@ absent from built APK. |
 
 | ID | Step | Status | Evidence / notes |
 |---|---|---|---|
-| 6.1 | Monthly groups | [~] | 2026-11-27 — In progress. `src/features/history/groupByMonth.ts` (groups by `createdAt` calendar month, newest first, pure TS); `src/features/history/MonthGroup.tsx` (month name + `Spent ₹X` header, pressable expand/collapse, 44 px target, `accessibilityRole="button"` + expanded state; rows are `PayRow` with Done, `dateLabel`, category and `notVerified`). `app/(tabs)/history.tsx` renders the groups with `defaultOpen={i === 0}` (groups are newest-first) and the COPY.md empty state "No payments yet.". Tests: `src/domain/__tests__/groupByMonth.test.ts` 5 (month grouping, newest first, empty, single month, cross-year); `src/features/history/__tests__/MonthGroup.test.tsx` 3 (name + total, expand/collapse, current month opens without a tap by seeding HistoryScreen). tsc clean; guardrails passed; `npm test` 322/322 (41 suites). Device check not run (no phone attached in this environment). Known gaps: row tap is a no-op until a later history step; grouping follows the step's `createdAt` (Home rows use `paidAt ?? createdAt`). |
+| 6.1 | Monthly groups | [x] | 2026-11-27 — In progress. `src/features/history/groupByMonth.ts` (groups by `createdAt` calendar month, newest first, pure TS); `src/features/history/MonthGroup.tsx` (month name + `Spent ₹X` header, pressable expand/collapse, 44 px target, `accessibilityRole="button"` + expanded state; rows are `PayRow` with Done, `dateLabel`, category and `notVerified`). `app/(tabs)/history.tsx` renders the groups with `defaultOpen={i === 0}` (groups are newest-first) and the COPY.md empty state "No payments yet.". Tests: `src/domain/__tests__/groupByMonth.test.ts` 5 (month grouping, newest first, empty, single month, cross-year); `src/features/history/__tests__/MonthGroup.test.tsx` 3 (name + total, expand/collapse, current month opens without a tap by seeding HistoryScreen). tsc clean; guardrails passed; `npm test` 322/322 (41 suites). Device check not run (no phone attached in this environment). Known gaps: row tap is a no-op until a later history step; grouping follows the step's `createdAt` (Home rows use `paidAt ?? createdAt`). |
 | 6.2 | Search | [ ] | |
 | 6.3 | Filters | [ ] | Changed 2026-11-18: filters are All, plus a date range. The "Not verified" filter retired — every payment in the store is verified. No Done, Failed or Pending filter. |
 | 6.4 | Export trigger | [ ] | |
