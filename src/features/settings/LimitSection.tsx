@@ -81,12 +81,12 @@ export function LimitSection() {
             <Button onPress={() => quickStep(500000)}>+₹5,000</Button>
             <Button onPress={() => quickStep(-100000)}>−₹1,000</Button>
           </View>
-          <Text variant="muted" style={{ marginTop: 8 }}>
-            Limit alerts at 80% and 100% are always on while a limit is set.
-          </Text>
           <Button onPress={handleSave} style={{ marginTop: 8 }}>Save</Button>
         </View>
       )}
+      <Text variant="muted" style={{ marginTop: 8 }}>
+        Limit alerts at 80% and 100% are always on while a limit is set.
+      </Text>
     </View>
   );
 }

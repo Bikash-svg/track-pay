@@ -7,6 +7,10 @@
 const PREFIX = 'trackpay:settings';
 export const THEME_KEY = `${PREFIX}:theme`;
 export const LIMIT_KEY = `${PREFIX}:limit`;
+export const REMINDER_TIMES_KEY = `${PREFIX}:reminderTimes`;
+export const QUIET_HOURS_KEY = `${PREFIX}:quietHours`;
+export const LOCK_SCREEN_DETAILS_KEY = `${PREFIX}:lockScreenDetails`;
+export const BACKUP_REMINDER_KEY = `${PREFIX}:backupReminder`;
 
 export type ThemeName = 'dark' | 'light' | 'auto';
 
@@ -146,4 +150,71 @@ export async function setLimit(value: number | null): Promise<void> {
   } else {
     await setItem(LIMIT_KEY, String(value));
   }
+}
+
+// --- Reminders (Step 7.5). Writes settings only; scheduling is Phase 8.
+//
+// Daily reminder times default to 10:00, 14:00, 18:00, 21:00 (1-6 times).
+// Quiet hours default to 23:00-07:00.
+// Lock-screen details default to off.
+// Backup reminder defaults to on.
+// Limit alerts are always on (read-only row, not a switch).
+export type QuietHours = {
+  readonly from: string; // "HH:MM"
+  readonly to: string; // "HH:MM"
+};
+
+const DEFAULT_REMINDER_TIMES = ['10:00', '14:00', '18:00', '21:00'];
+const DEFAULT_QUIET_HOURS: QuietHours = { from: '23:00', to: '07:00' };
+
+export async function getReminderTimes(): Promise<string[]> {
+  const raw = await getItem(REMINDER_TIMES_KEY);
+  if (!raw) return DEFAULT_REMINDER_TIMES;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : DEFAULT_REMINDER_TIMES;
+  } catch {
+    return DEFAULT_REMINDER_TIMES;
+  }
+}
+
+export async function setReminderTimes(times: string[]): Promise<void> {
+  await setItem(REMINDER_TIMES_KEY, JSON.stringify(times));
+}
+
+export async function getQuietHours(): Promise<QuietHours> {
+  const raw = await getItem(QUIET_HOURS_KEY);
+  if (!raw) return DEFAULT_QUIET_HOURS;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.from === 'string' && typeof parsed?.to === 'string') {
+      return parsed;
+    }
+    return DEFAULT_QUIET_HOURS;
+  } catch {
+    return DEFAULT_QUIET_HOURS;
+  }
+}
+
+export async function setQuietHours(qh: QuietHours): Promise<void> {
+  await setItem(QUIET_HOURS_KEY, JSON.stringify(qh));
+}
+
+export async function getLockScreenDetails(): Promise<boolean> {
+  const raw = await getItem(LOCK_SCREEN_DETAILS_KEY);
+  return raw === 'true';
+}
+
+export async function setLockScreenDetails(value: boolean): Promise<void> {
+  await setItem(LOCK_SCREEN_DETAILS_KEY, String(value));
+}
+
+export async function getBackupReminder(): Promise<boolean> {
+  const raw = await getItem(BACKUP_REMINDER_KEY);
+  if (raw === null) return true; // default on
+  return raw === 'true';
+}
+
+export async function setBackupReminder(value: boolean): Promise<void> {
+  await setItem(BACKUP_REMINDER_KEY, String(value));
 }

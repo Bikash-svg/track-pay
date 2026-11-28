@@ -87,4 +87,15 @@ export const copy = {
     },
   },
   noSpendingThisMonth: 'No spending this month',
+  // 7.5 Reminders settings (copy from COPY.md §Settings).
+  dailyReminders: 'Daily reminders',
+  reminderTimes: 'Reminder times',
+  quietHoursDescription: 'No reminders from 11 pm to 7 am',
+  backupReminder: 'Monthly backup reminder',
+  lockScreenDetails: 'Show details on lock screen',
+  lockScreenDetailsOff: 'Off: notifications only say a payment was added',
+  limitAlertsAlwaysOn: 'Limit alerts at 80% and 100% are always on while a limit is set.',
+  batterySettings: 'Battery settings',
+  addTime: 'Add time',
+  remove: 'Remove',
 } as const;
