@@ -10,6 +10,7 @@ import { searchPayments } from '../../src/features/history/searchPayments';
 import { filterPayments } from '../../src/features/history/filterPayments';
 import { ExportChoices } from '../../src/features/history/ExportChoices';
 import { MonthGroup } from '../../src/features/history/MonthGroup';
+import { useDataActions } from '../../src/features/settings/DataSection';
 
 // Parses a plain YYYY-MM-DD field into a local calendar date. An invalid or
 // partial value is ignored (null) rather than throwing, so results update as
@@ -37,6 +38,7 @@ function parseDateInput(value: string, endOfDay: boolean): Date | null {
 export default function HistoryScreen() {
   const { payments } = usePayments();
   const { open } = useDialog();
+  const { handleExportBackup, handlePdfStatement } = useDataActions();
   const [query, setQuery] = useState('');
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState('');
@@ -70,18 +72,8 @@ export default function HistoryScreen() {
       title: 'Export',
       children: (
         <ExportChoices
-          onBackup={() =>
-            open({
-              title: 'Export',
-              subtitle: 'Backup file export is coming soon.',
-            })
-          }
-          onPdf={() =>
-            open({
-              title: 'Export',
-              subtitle: 'Monthly PDF export is coming soon.',
-            })
-          }
+          onBackup={handleExportBackup}
+          onPdf={handlePdfStatement}
         />
       ),
     });

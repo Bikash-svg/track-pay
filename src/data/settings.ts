@@ -218,3 +218,17 @@ export async function getBackupReminder(): Promise<boolean> {
 export async function setBackupReminder(value: boolean): Promise<void> {
   await setItem(BACKUP_REMINDER_KEY, String(value));
 }
+
+// --- Data export (Step 7.7). Records the time of the last export.
+export const LAST_EXPORT_KEY = `${PREFIX}:lastExport`;
+
+export async function getLastExport(): Promise<number | null> {
+  const raw = await getItem(LAST_EXPORT_KEY);
+  if (!raw) return null;
+  const val = parseInt(raw, 10);
+  return isNaN(val) ? null : val;
+}
+
+export async function setLastExport(ts: number): Promise<void> {
+  await setItem(LAST_EXPORT_KEY, String(ts));
+}

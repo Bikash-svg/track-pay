@@ -4,6 +4,7 @@ import { ProfileSection } from '../../src/features/settings/ProfileSection';
 import { ThemeSection } from '../../src/features/settings/ThemeSection';
 import { LimitSection } from '../../src/features/settings/LimitSection';
 import { RemindersSection } from '../../src/features/settings/RemindersSection';
+import { DataSection } from '../../src/features/settings/DataSection';
 
 export default function SettingsScreen() {
   return (
@@ -13,6 +14,7 @@ export default function SettingsScreen() {
       <ThemeSection />
       <LimitSection />
       <RemindersSection />
+      <DataSection />
     </Screen>
   );
 }

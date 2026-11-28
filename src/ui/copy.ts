@@ -98,4 +98,27 @@ export const copy = {
   batterySettings: 'Battery settings',
   addTime: 'Add time',
   remove: 'Remove',
+  // 7.7 Data settings (copy from COPY.md §Settings and exact content).
+  yourData: 'Your data',
+  importData: 'Import data',
+  monthlyPdfStatement: 'Monthly PDF statement',
+  exportDataWarningTitle: 'Export data',
+  exportDataWarningMessage:
+    'This file contains private financial data and is not encrypted.',
+  export: 'Export',
+  error: 'Error',
+  exportFailed: 'Export failed.',
+  importInvalidFile: 'This file could not be read. Nothing was changed.',
+  importNewerVersion: 'This file is from a newer version of Track Pay',
+  importTitle: 'Import data',
+  importQuestion: 'Import {n} payments? Choose merge or replace.',
+  importMerge: 'Merge with existing',
+  importReplace: 'Replace all',
+  importDoneTitle: 'Import complete',
+  importDoneMessage:
+    'Imported {imported} payments. {skipped} skipped (already exist).',
+  pdfComingSoonTitle: 'PDF statement',
+  pdfComingSoonMessage: 'Coming soon.',
+  lastExportLabel: 'Last export:',
+  lastExportNever: 'Never',
 } as const;
